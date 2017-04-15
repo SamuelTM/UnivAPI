@@ -150,8 +150,9 @@ class Aluno(object):
                 if nota:
                     descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
                     data = t.find(id=lambda x: x and '_lbData' in x).contents[0]
-                    valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0]
-                    notas.append(Nota(descricao, data, valor, nota))
+                    valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
+                    nota = nota.contents[0].replace(',', '.')
+                    notas.append(Nota(descricao, data, float(valor), float(nota)))
 
             # Adicionamos as faltas de aulas
             faltas = []
@@ -268,6 +269,6 @@ class Aluno(object):
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
             mensagem = soup.find('div', id='Corpo').contents[4]
-            mensagens.append(Mensagem(remetente, data, assunto, mensagem))
+            mensagens.append(Mensagem(str(remetente), str(data), str(assunto), str(mensagem)))
 
         return mensagens
