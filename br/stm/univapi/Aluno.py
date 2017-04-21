@@ -1,3 +1,5 @@
+from threading import Thread
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -88,97 +90,160 @@ class Aluno(object):
     def url_avatar(self):
         return 'http://www.siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
 
-    def disciplinas(self):
-        disciplinas = []
+    '''
+    Retorna um dict (chave/valor) com os nomes das disciplinas e os respectivos 
+    links para elas. Caso params não seja nulo, ele será usado para guardar
+    os parâmetros da página que acabamos de carregar neste método. Isso vai
+    poupar tempo mais tarde.
+    '''
+
+    def nomes_disciplinas(self, params):
+        disciplinas = {}
         url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
 
-        # Pegamos os links para as páginas de todas as matérias
-        pedido_post = self.sessao.get(url_principal)
-        soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
-        links_disciplinas = []
-        for a in soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True):
-            links_disciplinas.append(a['href'].split('(\'')[1].split('\',')[0])
+        pedido_get = self.sessao.get(url_principal)
+        soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+        for d in soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True):
+            disciplinas[d.contents[0]] = d['href'].split('(\'')[1].split('\',')[0]
 
-        # Acessamos cada página individualmente para coletarmos as informações
-        parametros = {
+        if params is not None:
+            params.update({
+                '__VIEWSTATEENCRYPTED': '',
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
+            })
+        return disciplinas
+
+    '''
+    Retorn a disciplina com o link especificado. Caso params_inicais 
+    seja fornecido, usaremos ele para carregar a página da disciplina,
+    caso contrário, carregaremos os parâmetros necessários na hora.
+    '''
+
+    def disciplina(self, link_pagina, params_iniciais):
+        url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
+        if params_iniciais is None:
+            pedido_post = self.sessao.get(url_principal)
+            soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+            params = {
+                '__VIEWSTATEENCRYPTED': '',
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+            }
+        else:
+            params = params_iniciais
+
+        params['__EVENTTARGET'] = link_pagina
+
+        pedido_post = self.sessao.post(url_principal, data=params)
+        soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+
+        nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
+        professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
+        situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0]
+
+        # Pegamos os links de todas as APS
+        links_aps = []
+        for a in soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input'):
+            links_aps.append(a['name'])
+
+        # Pegamos as informações de cada APS individualmente
+        parametros_aps = {
             '__VIEWSTATEENCRYPTED': '',
             '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
             '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
         }
-        for link_disciplina in links_disciplinas:
-            parametros['__EVENTTARGET'] = link_disciplina
-            pedido_post = self.sessao.post(url_principal, data=parametros)
+        aps = []
+        for link_pagina in links_aps:
+            # Adicionamos o parâmetro necessário para abrir a página da APS
+            parametros_aps[link_pagina] = 'Visualizar'
+
+            pedido_post = self.sessao.post('http://www.siu.univale.br/SIU-PortalAluno/OpcoesDisciplinas.aspx',
+                                           data=parametros_aps)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+            tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
 
-            nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
-            professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
-            situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0]
-
-            # Pegamos os links de todas as APS
-            links_aps = []
-            for a in soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input'):
-                links_aps.append(a['name'])
-
-            # Pegamos as informações de cada APS individualmente
-            parametros_aps = {
-                '__VIEWSTATEENCRYPTED': '',
-                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
-            }
-            aps = []
-            for link in links_aps:
-                # Adicionamos o parâmetro necessário para abrir a página da APS
-                parametros_aps[link] = 'Visualizar'
-
-                pedido_post = self.sessao.post('http://www.siu.univale.br/SIU-PortalAluno/OpcoesDisciplinas.aspx',
-                                               data=parametros_aps)
-                soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
-                titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x).contents[0]
+            # Verificação para o caso da disciplina não possuir APS registrada
+            if tag_titulo:
+                titulo = tag_titulo.contents[0]
                 lancamento = soup.find(id=lambda x: x and '_lblLancamentoAPS' in x).contents[0]
                 prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
                 descricao = ' '.join(
                     soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
+
                 # Adicionamos a APS à lista
                 aps.append(Aps(lancamento, titulo, prazo, descricao))
 
-            # Adicionamos as notas
-            notas = []
-            for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
-                nota = t.find(id=lambda x: x and '_lbNota' in x)
-                if nota:
-                    descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
-                    data = t.find(id=lambda x: x and '_lbData' in x).contents[0]
-                    valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
-                    nota = nota.contents[0].replace(',', '.')
-                    notas.append(Nota(descricao, data, float(valor), float(nota)))
+        # Adicionamos as notas
+        notas = []
+        for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
+            nota = t.find(id=lambda x: x and '_lbNota' in x)
+            '''
+            Temos que verificar se lbNota existe porque não queremos
+            o campo que mostra o total das notas e a única coisa que
+            diferencia ele do resto das colunas é seu nome lbTotalNota
+            '''
+            if nota:
+                descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
+                data = t.find(id=lambda x: x and '_lbData' in x).contents[0]
+                valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
+                nota = nota.contents[0].replace(',', '.')
 
-            # Adicionamos as faltas de aulas
-            faltas = []
-            tag_faltas = soup.find(id=lambda x: x and '_dlistPresenca' in x)
-            if tag_faltas:
-                for t in tag_faltas.find_all(
-                        'td', style='width:10px;'):
-                    faltas_horarios = []
-                    for a in t.find_all(id=lambda x: x and '_pnlPresenca' in x):
-                        faltas_horarios.append(0 if 'green' in a.find('img')['src'] else 1)
-                    dia = t.find(id=lambda x: x and '_lbDtAula' in x).contents[0]
-                    faltas.append(Falta('Aulas', dia, faltas_horarios))
+                notas.append(Nota(descricao, data, float(valor), float(nota)))
 
-            # Adicionamos as faltas de APS
-            tag_faltas_aps = soup.find(id=lambda x: x and '_dlistPresencaAPS' in x)
-            if tag_faltas_aps:
-                for t in tag_faltas_aps.find_all(
-                        'td', style='width:10px;'):
-                    faltas_horarios = []
-                    for a in t.find_all('img', id=lambda x: x and 'dlistHorariosAPS' in x):
-                        faltas_horarios.append(0 if 'green' in a['src'] else 1)
-                        dia = t.find(id=lambda x: x and 'lbDtAula' in x).contents[0]
-                        faltas.append(Falta('APS', dia, faltas_horarios))
+        # Adicionamos as faltas de aulas
+        faltas = []
+        tag_faltas = soup.find(id=lambda x: x and '_dlistPresenca' in x)
+        if tag_faltas:
+            for t in tag_faltas.find_all(
+                    'td', style='width:10px;'):
+                faltas_horarios = []
+                for a in t.find_all(id=lambda x: x and '_pnlPresenca' in x):
+                    faltas_horarios.append(0 if 'green' in a.find('img')['src'] else 1)
+                dia = t.find(id=lambda x: x and '_lbDtAula' in x).contents[0]
 
-            # Juntamos tudo em um único objeto e adicionamos à lista de disciplinas
-            disciplinas.append(Disciplina(nome, professor, situacao, notas, faltas, aps))
+                faltas.append(Falta('Aulas', dia, faltas_horarios))
+
+        # Adicionamos as faltas de APS
+        tag_faltas_aps = soup.find(id=lambda x: x and '_dlistPresencaAPS' in x)
+        if tag_faltas_aps:
+            for t in tag_faltas_aps.find_all(
+                    'td', style='width:10px;'):
+                faltas_horarios = []
+                for a in t.find_all('img', id=lambda x: x and 'dlistHorariosAPS' in x):
+                    faltas_horarios.append(0 if 'green' in a['src'] else 1)
+                    dia = t.find(id=lambda x: x and 'lbDtAula' in x).contents[0]
+
+                    faltas.append(Falta('APS', dia, faltas_horarios))
+
+        return Disciplina(nome, professor, situacao, notas, faltas, aps)
+
+    '''
+    Adiciona a disciplina com o link especificado à lista
+    especificada. A diferença neste método é que a página
+    do portal é acessada em uma nova sessão. Este método
+    foi criado somente para podermos trabalhar com threads
+    e portanto, não é recomendado seu uso externo.
+    '''
+
+    def disciplina_thread(self, link_pagina, params_iniciais, lista):
+        aluno = Aluno(self.matricula, self.senha)
+        if aluno.autenticar():
+            lista.append(aluno.disciplina(link_pagina, params_iniciais))
+
+    def disciplinas(self):
+        disciplinas = []
+        params = {}
+        nomes = self.nomes_disciplinas(params)
+        threads = list(
+            map(lambda nome: Thread(target=self.disciplina_thread, args=(nomes[nome], params, disciplinas)), nomes))
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
         return disciplinas
 
     def boletos(self):
@@ -255,12 +320,12 @@ class Aluno(object):
             '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
         })
-        for a in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all('tr',
-                                                                           {'class': lambda x: x and 'ItemGrid' in x}):
-            remetente = a.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
-            data = a.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
+        for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all('tr', {
+                'class': lambda x: x and 'ItemGrid' in x}):
+            remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
+            data = msg.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
 
-            tag_assunto = a.find('a', id=lambda x: x and '_lkbAssunto' in x)
+            tag_assunto = msg.find('a', id=lambda x: x and '_lkbAssunto' in x)
             assunto = ' '.join(tag_assunto.contents[0].split())
 
             link_mensagem = tag_assunto['href'].split('(\'')[1].split('\',')[0]
@@ -268,7 +333,7 @@ class Aluno(object):
             pedido_post = self.sessao.post(url, data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
-            mensagem = soup.find('div', id='Corpo').contents[4]
-            mensagens.append(Mensagem(str(remetente), str(data), str(assunto), str(mensagem)))
+            conteudo = soup.find('div', id='Corpo').contents[4]
+            mensagens.append(Mensagem(remetente, data, assunto, conteudo))
 
         return mensagens
