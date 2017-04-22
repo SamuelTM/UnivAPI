@@ -7,6 +7,7 @@ from br.stm.univapi.modelos.Aps import Aps
 from br.stm.univapi.modelos.Boleto import Boleto
 from br.stm.univapi.modelos.Disciplina import Disciplina
 from br.stm.univapi.modelos.Falta import Falta
+from br.stm.univapi.modelos.Horario import Horario
 from br.stm.univapi.modelos.Mensagem import Mensagem
 from br.stm.univapi.modelos.Nota import Nota
 
@@ -116,7 +117,7 @@ class Aluno(object):
         return disciplinas
 
     '''
-    Retorn a disciplina com o link especificado. Caso params_inicais 
+    Retorna a disciplina com o link especificado. Caso params_inicais 
     seja fornecido, usaremos ele para carregar a página da disciplina,
     caso contrário, carregaremos os parâmetros necessários na hora.
     '''
@@ -124,8 +125,8 @@ class Aluno(object):
     def disciplina(self, link_pagina, params_iniciais):
         url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
         if params_iniciais is None:
-            pedido_post = self.sessao.get(url_principal)
-            soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+            pedido_get = self.sessao.get(url_principal)
+            soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
             params = {
                 '__VIEWSTATEENCRYPTED': '',
                 '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
@@ -175,6 +176,7 @@ class Aluno(object):
                     soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
 
                 # Adicionamos a APS à lista
+
                 aps.append(Aps(lancamento, titulo, prazo, descricao))
 
         # Adicionamos as notas
@@ -182,9 +184,9 @@ class Aluno(object):
         for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
             nota = t.find(id=lambda x: x and '_lbNota' in x)
             '''
-            Temos que verificar se lbNota existe porque não queremos
-            o campo que mostra o total das notas e a única coisa que
-            diferencia ele do resto das colunas é seu nome lbTotalNota
+            Verificamos se lbNota existe. Isso serve 
+            para diferenciar uma coluna de nota da 
+            coluna do total das notas
             '''
             if nota:
                 descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
@@ -337,3 +339,37 @@ class Aluno(object):
             mensagens.append(Mensagem(remetente, data, assunto, conteudo))
 
         return mensagens
+
+    def horarios(self):
+        hrs = []
+        pedido_get = self.sessao.get('http://www.siu.univale.br/SIU-PortalAluno/HorarioAulas/Horario.aspx')
+        soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+        turnos = ['_grdMatutino', '_grdVespertino', '_grdNoturno']
+
+        # Procuramos pelos horários de todos os turnos
+        for turno in turnos:
+            tabela_tag = soup.find(id=lambda x: x and turno in x)
+
+            # Se o turno atual possui horários
+            if tabela_tag:
+                nome_turno = turno[4:]
+                for tabela in tabela_tag.find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
+                    hora_inicio_tag = tabela.find(id=lambda x: x and 'lbHrIni' in x)
+                    if hora_inicio_tag:
+                        hora_termino = tabela.find(id=lambda x: x and 'lbHrTerm' in x).contents[0]
+                        hora_inicio = hora_inicio_tag.contents[0]
+
+                        # Pegamos cada célula da tabela
+                        celulas = tabela.find_all('table', id=lambda x: x and '_grdProfs' in x)
+                        for celula in celulas:
+                            professor_tag = celula.find('a', style='text-decoration:none')
+                            professor = professor_tag.contents[0] if professor_tag else \
+                                celula.find(id=lambda x: x and 'lbProf' in x).contents[0]
+                            disciplina = celula.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
+                            sala = celula.find(id=lambda x: x and '_lbSala' in x).contents[0]
+                            dia = celula.get('id').split('grdProfs')[1]
+
+                            # Adicionamos o horário à lista
+                            hrs.append(
+                                Horario(hora_inicio, hora_termino, professor, disciplina, sala, dia, nome_turno))
+        return hrs
