@@ -25,6 +25,10 @@ class Aluno(object):
             'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3'
         })
 
+    '''
+    Inicia uma sessão no portal. Sem este
+    método, os outros não funcionam.
+    '''
     def autenticar(self):
         url_login = 'http://www.siu.univale.br/SIU-PortalAluno/Login.aspx'
         pedido_get = self.sessao.get(url_login)
@@ -72,22 +76,36 @@ class Aluno(object):
                         # Se tudo der certo esta função retorna True
                         return pedido_post.status_code == 200
 
+    '''
+    Retorna o nome do aluno
+    '''
     def nome(self):
         pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
         return soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbNomeAluno').contents[0].strip()
 
+    '''
+    Retorna o curso do aluno
+    '''
     def curso(self):
         pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
         # Por alguma razão a string do curso vem com espaços demais, então conserto isso assim
         return ' '.join(soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbInfoCurso').contents[0].split())
 
+    '''
+    Retorna o email do aluno
+    '''
     def email(self):
         pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
         return soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbEmailAluno').contents[0].strip()
 
+    '''
+    Retorna a URL do avatar do aluno. Lembrando
+    que se o mesmo não possuir uma foto, a URL
+    será inválida.
+    '''
     def url_avatar(self):
         return 'http://www.siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
 
@@ -117,9 +135,10 @@ class Aluno(object):
         return disciplinas
 
     '''
-    Retorna a disciplina com o link especificado. Caso params_inicais 
-    seja fornecido, usaremos ele para carregar a página da disciplina,
-    caso contrário, carregaremos os parâmetros necessários na hora.
+    Retorna um objeto Disciplina com o link especificado.
+    Caso params_inicais seja fornecido, usaremos ele para
+    carregar a página da disciplina, caso contrário, carregaremos
+    os parâmetros necessários na hora.
     '''
 
     def disciplina(self, link_pagina, params_iniciais):
@@ -231,23 +250,43 @@ class Aluno(object):
     e portanto, não é recomendado seu uso externo.
     '''
 
-    def disciplina_thread(self, link_pagina, params_iniciais, lista):
-        aluno = Aluno(self.matricula, self.senha)
-        if aluno.autenticar():
-            lista.append(aluno.disciplina(link_pagina, params_iniciais))
+    def disciplina_thread(self, link_pagina, params_iniciais, lista_disciplinas, sessao_atual):
+        if not sessao_atual:
+            aluno = Aluno(self.matricula, self.senha)
+            if aluno.autenticar():
+                lista_disciplinas.append(aluno.disciplina(link_pagina, params_iniciais))
+        else:
+            lista_disciplinas.append(self.disciplina(link_pagina, params_iniciais))
+        print(link_pagina)
 
+    '''
+    Retorna uma lista de objetos Disciplina
+    com as disciplinas do aluno
+    '''
     def disciplinas(self):
         disciplinas = []
-        params = {}
-        nomes = self.nomes_disciplinas(params)
+        parametros = {}
+        nomes = self.nomes_disciplinas(parametros)
+
+        # Separamos uma disciplina para ser retornada na sessão atual, mais eficiente
+        primeiro_nome = nomes.popitem()
+
         threads = list(
-            map(lambda nome: Thread(target=self.disciplina_thread, args=(nomes[nome], params, disciplinas)), nomes))
+            map(lambda nome: Thread(target=self.disciplina_thread, args=(nomes[nome], parametros, disciplinas, False)),
+                nomes))
+
+        # Adicionamos a disciplina que separamos anteriormente
+        threads.append(Thread(target=self.disciplina_thread, args=(primeiro_nome[1], parametros, disciplinas, True)))
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
         return disciplinas
 
+    '''
+    Retorna uma lista de objetos Boleto com
+    os boletos do aluno
+    '''
     def boletos(self):
         url = 'http://www.siu.univale.br/SIU-PortalAluno/Financeiro/Titulos.aspx'
         pagina_boleto = self.sessao.get(url)
@@ -302,6 +341,11 @@ class Aluno(object):
                 boletos.append(Boleto(ano_mes, vencimento, mensalidade, dependencia, desconto, liquido, situacao))
         return boletos
 
+    '''
+    Retorna uma lista de objetos Mensagem com
+    as mensagens do aluno. Este método atualmente
+    não suporta as mensagens novas, somente as lidas.
+    '''
     def mensagens(self):
         mensagens = []
         url = 'http://www.siu.univale.br/SIU-PortalAluno/CaixaPostal/CaixaPostal.aspx'
@@ -340,6 +384,10 @@ class Aluno(object):
 
         return mensagens
 
+    '''
+    Retorna uma lista de objetos Horario com
+    os horários do aluno
+    '''
     def horarios(self):
         hrs = []
         pedido_get = self.sessao.get('http://www.siu.univale.br/SIU-PortalAluno/HorarioAulas/Horario.aspx')
