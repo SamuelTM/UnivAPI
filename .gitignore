@@ -49,4 +49,6 @@ Temporary Items
 .idea
 *.pyc
 
+.vscode
+
 br/stm/univapi/Teste\.py
