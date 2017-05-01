@@ -218,7 +218,7 @@ class Aluno(object):
                 valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
                 nota = nota.contents[0].replace(',', '.')
 
-                notas.append(Nota(descricao, data, float(valor), float(nota)))
+                notas.append(Nota(descricao, data, valor, nota))
 
         # Adicionamos as faltas de aulas
         faltas = []
@@ -262,7 +262,6 @@ class Aluno(object):
                 lista_disciplinas.append(aluno.disciplina(link_pagina, params_iniciais))
         else:
             lista_disciplinas.append(self.disciplina(link_pagina, params_iniciais))
-        print(link_pagina)
 
     '''
     Retorna uma lista de objetos Disciplina
