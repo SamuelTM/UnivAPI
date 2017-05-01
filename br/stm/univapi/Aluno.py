@@ -29,6 +29,7 @@ class Aluno(object):
     Inicia uma sessão no portal. Sem este
     método, os outros não funcionam.
     '''
+
     def autenticar(self):
         url_login = 'http://www.siu.univale.br/SIU-PortalAluno/Login.aspx'
         pedido_get = self.sessao.get(url_login)
@@ -79,6 +80,7 @@ class Aluno(object):
     '''
     Retorna o nome do aluno
     '''
+
     def nome(self):
         pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
@@ -87,6 +89,7 @@ class Aluno(object):
     '''
     Retorna o curso do aluno
     '''
+
     def curso(self):
         pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
@@ -96,6 +99,7 @@ class Aluno(object):
     '''
     Retorna o email do aluno
     '''
+
     def email(self):
         pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
@@ -106,6 +110,7 @@ class Aluno(object):
     que se o mesmo não possuir uma foto, a URL
     será inválida.
     '''
+
     def url_avatar(self):
         return 'http://www.siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
 
@@ -263,6 +268,7 @@ class Aluno(object):
     Retorna uma lista de objetos Disciplina
     com as disciplinas do aluno
     '''
+
     def disciplinas(self):
         disciplinas = []
         parametros = {}
@@ -271,22 +277,26 @@ class Aluno(object):
         # Separamos uma disciplina para ser retornada na sessão atual, mais eficiente
         primeiro_nome = nomes.popitem()
 
+        # Criamos uma thread para cada uma do resto das disciplinas
         threads = list(
             map(lambda nome: Thread(target=self.disciplina_thread, args=(nomes[nome], parametros, disciplinas, False)),
                 nomes))
 
-        # Adicionamos a disciplina que separamos anteriormente
+        # Adicionamos a disciplina que separamos anteriormente à lista de threads
         threads.append(Thread(target=self.disciplina_thread, args=(primeiro_nome[1], parametros, disciplinas, True)))
+
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
+
         return disciplinas
 
     '''
     Retorna uma lista de objetos Boleto com
     os boletos do aluno
     '''
+
     def boletos(self):
         url = 'http://www.siu.univale.br/SIU-PortalAluno/Financeiro/Titulos.aspx'
         pagina_boleto = self.sessao.get(url)
@@ -343,12 +353,13 @@ class Aluno(object):
 
     '''
     Retorna uma lista de objetos Mensagem com
-    as mensagens do aluno. Este método atualmente
-    não suporta as mensagens novas, somente as lidas.
+    as mensagens do aluno.
     '''
+
     def mensagens(self):
         mensagens = []
         url = 'http://www.siu.univale.br/SIU-PortalAluno/CaixaPostal/CaixaPostal.aspx'
+        categorias = ['ctl00$ContentPlaceHolder1$lkbCaixaEntrada', 'ctl00$ContentPlaceHolder1$lkbLidas']
         pedido_get = self.sessao.get(url)
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
         parametros = {
@@ -356,31 +367,32 @@ class Aluno(object):
             '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
             '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-            '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$lkbLidas'
         }
-        pedido_post = self.sessao.post(url, data=parametros)
-        soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
-
-        parametros.update({
-            '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-            '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
-        })
-        for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all('tr', {
-                'class': lambda x: x and 'ItemGrid' in x}):
-            remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
-            data = msg.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
-
-            tag_assunto = msg.find('a', id=lambda x: x and '_lkbAssunto' in x)
-            assunto = ' '.join(tag_assunto.contents[0].split())
-
-            link_mensagem = tag_assunto['href'].split('(\'')[1].split('\',')[0]
-            parametros['__EVENTTARGET'] = link_mensagem
+        for categoria in categorias:
+            parametros['__EVENTTARGET'] = categoria
             pedido_post = self.sessao.post(url, data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
-            conteudo = soup.find('div', id='Corpo').contents[4]
-            mensagens.append(Mensagem(remetente, data, assunto, conteudo))
+            parametros.update({
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
+            })
+            for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all('tr', {
+                    'class': lambda x: x and 'ItemGrid' in x}):
+                remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
+                data = msg.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
+
+                tag_assunto = msg.find('a', id=lambda x: x and '_lkbAssunto' in x)
+                assunto = ' '.join(tag_assunto.contents[0].split())
+
+                link_mensagem = tag_assunto['href'].split('(\'')[1].split('\',')[0]
+                parametros['__EVENTTARGET'] = link_mensagem
+                pedido_post = self.sessao.post(url, data=parametros)
+                soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+
+                conteudo = soup.find('div', id='Corpo').contents[4]
+                mensagens.append(Mensagem(remetente, data, assunto, conteudo))
 
         return mensagens
 
@@ -388,6 +400,7 @@ class Aluno(object):
     Retorna uma lista de objetos Horario com
     os horários do aluno
     '''
+
     def horarios(self):
         hrs = []
         pedido_get = self.sessao.get('http://www.siu.univale.br/SIU-PortalAluno/HorarioAulas/Horario.aspx')
