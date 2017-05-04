@@ -1,0 +1,191 @@
+from threading import Thread
+
+from bs4 import BeautifulSoup
+
+from br.stm.univapi.modelos.Aps import Aps
+from br.stm.univapi.modelos.Disciplina import Disciplina
+from br.stm.univapi.modelos.Falta import Falta
+from br.stm.univapi.modelos.Nota import Nota
+
+
+class Disciplinas(object):
+    def __init__(self, aluno):
+        self.aluno = aluno
+
+    '''
+    Retorna um dict (chave/valor) com os nomes das disciplinas e os respectivos 
+    links para elas. Caso params não seja nulo, ele será usado para guardar
+    os parâmetros da página que acabamos de carregar neste método. Isso vai
+    poupar tempo mais tarde.
+    '''
+
+    def nomes(self, params):
+        disciplinas = {}
+        url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
+
+        pedido_get = self.aluno.sessao.get(url_principal)
+        soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+        for d in soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True):
+            disciplinas[d.contents[0]] = d['href'].split('(\'')[1].split('\',')[0]
+
+        if params is not None:
+            params.update({
+                '__VIEWSTATEENCRYPTED': '',
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
+            })
+        return disciplinas
+
+    '''
+    Retorna um objeto Disciplina com o link especificado.
+    Caso params_inicais seja fornecido, usaremos ele para
+    carregar a página da disciplina, caso contrário, carregaremos
+    os parâmetros necessários na hora.
+    '''
+
+    def disciplina(self, link_pagina, params_iniciais):
+        url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
+        if params_iniciais is None:
+            pedido_get = self.aluno.sessao.get(url_principal)
+            soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+            params = {
+                '__VIEWSTATEENCRYPTED': '',
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+            }
+        else:
+            params = params_iniciais
+
+        params['__EVENTTARGET'] = link_pagina
+
+        pedido_post = self.aluno.sessao.post(url_principal, data=params)
+        soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+
+        nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
+        professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
+        situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0]
+
+        # Pegamos os links de todas as APS
+        links_aps = []
+        for a in soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input'):
+            links_aps.append(a['name'])
+
+        # Pegamos as informações de cada APS individualmente
+        parametros_aps = {
+            '__VIEWSTATEENCRYPTED': '',
+            '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+            '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
+        }
+        aps = []
+        for link_pagina in links_aps:
+            # Adicionamos o parâmetro necessário para abrir a página da APS
+            parametros_aps[link_pagina] = 'Visualizar'
+
+            pedido_post = self.aluno.sessao.post('http://www.siu.univale.br/SIU-PortalAluno/OpcoesDisciplinas.aspx',
+                                                 data=parametros_aps)
+            soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+            tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
+
+            # Verificação para o caso da disciplina não possuir APS registrada
+            if tag_titulo:
+                titulo = tag_titulo.contents[0]
+                lancamento = soup.find(id=lambda x: x and '_lblLancamentoAPS' in x).contents[0]
+                prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
+                descricao = ' '.join(
+                    soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
+
+                # Adicionamos a APS à lista
+
+                aps.append(Aps(lancamento, titulo, prazo, descricao))
+
+        # Adicionamos as notas
+        notas = []
+        for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
+            nota = t.find(id=lambda x: x and '_lbNota' in x)
+            '''
+            Verificamos se lbNota existe. Isso serve 
+            para diferenciar uma coluna de nota da 
+            coluna do total das notas
+            '''
+            if nota:
+                descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
+                data = t.find(id=lambda x: x and '_lbData' in x).contents[0]
+                valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
+                nota = nota.contents[0].replace(',', '.')
+
+                notas.append(Nota(descricao, data, valor, nota))
+
+        # Adicionamos as faltas de aulas
+        faltas = []
+        tag_faltas = soup.find(id=lambda x: x and '_dlistPresenca' in x)
+        if tag_faltas:
+            for t in tag_faltas.find_all(
+                    'td', style='width:10px;'):
+                faltas_horarios = []
+                for a in t.find_all(id=lambda x: x and '_pnlPresenca' in x):
+                    faltas_horarios.append(0 if 'green' in a.find('img')['src'] else 1)
+                dia = t.find(id=lambda x: x and '_lbDtAula' in x).contents[0]
+
+                faltas.append(Falta('Aulas', dia, faltas_horarios))
+
+        # Adicionamos as faltas de APS
+        tag_faltas_aps = soup.find(id=lambda x: x and '_dlistPresencaAPS' in x)
+        if tag_faltas_aps:
+            for t in tag_faltas_aps.find_all(
+                    'td', style='width:10px;'):
+                faltas_horarios = []
+                for a in t.find_all('img', id=lambda x: x and 'dlistHorariosAPS' in x):
+                    faltas_horarios.append(0 if 'green' in a['src'] else 1)
+                    dia = t.find(id=lambda x: x and 'lbDtAula' in x).contents[0]
+
+                    faltas.append(Falta('APS', dia, faltas_horarios))
+
+        return Disciplina(nome, professor, situacao, notas, faltas, aps)
+
+    '''
+    Adiciona a disciplina com o link especificado à lista
+    especificada. A diferença neste método é que a página
+    do portal é acessada em uma nova sessão. Este método
+    foi criado somente para podermos trabalhar com threads
+    e portanto, não é recomendado seu uso externo.
+    '''
+
+    def disciplina_thread(self, link_pagina, params_iniciais, lista_disciplinas, sessao_atual):
+        if not sessao_atual:
+            from br.stm.univapi.Aluno import Aluno
+            aluno = Aluno(self.aluno.matricula, self.aluno.senha)
+            if aluno.autenticar():
+                lista_disciplinas.append(aluno.disciplinas.disciplina(link_pagina, params_iniciais))
+        else:
+            lista_disciplinas.append(self.disciplina(link_pagina, params_iniciais))
+
+    '''
+    Retorna uma lista de objetos Disciplina
+    com as disciplinas do aluno
+    '''
+
+    def lista(self):
+        disciplinas = []
+        parametros = {}
+        nomes = self.nomes(parametros)
+
+        # Separamos uma disciplina para ser retornada na sessão atual, mais eficiente
+        primeiro_nome = nomes.popitem()
+
+        # Criamos uma thread para cada uma do resto das disciplinas
+        threads = list(
+            map(lambda nome: Thread(target=self.disciplina_thread, args=(nomes[nome], parametros, disciplinas, False)),
+                nomes))
+
+        # Adicionamos a disciplina que separamos anteriormente à lista de threads
+        threads.append(Thread(target=self.disciplina_thread, args=(primeiro_nome[1], parametros, disciplinas, True)))
+
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        return disciplinas

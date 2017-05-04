@@ -47,8 +47,9 @@ Temporary Items
 .apdisk
 
 .idea
+.vscode
+__init__.py
 *.pyc
 
-.vscode
-
+# Arquivo para testar o projeto
 br/stm/univapi/Teste\.py
