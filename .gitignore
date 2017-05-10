@@ -48,7 +48,6 @@ Temporary Items
 
 .idea
 .vscode
-__init__.py
 *.pyc
 
 # Arquivo para testar o projeto
