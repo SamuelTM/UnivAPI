@@ -19,17 +19,16 @@ class Disciplinas(object):
     poupar tempo mais tarde.
     '''
 
-    def nomes(self, params):
+    def nomes(self, parametros):
         disciplinas = {}
-        url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
 
-        pedido_get = self.aluno.sessao.get(url_principal)
+        pedido_get = self.aluno.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
         for d in soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True):
             disciplinas[d.contents[0]] = d['href'].split('(\'')[1].split('\',')[0]
 
-        if params is not None:
-            params.update({
+        if parametros is not None:
+            parametros.update({
                 '__VIEWSTATEENCRYPTED': '',
                 '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
                 '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
@@ -44,25 +43,15 @@ class Disciplinas(object):
     os parâmetros necessários na hora.
     '''
 
-    def disciplina(self, link_pagina, params_iniciais):
-        url_principal = 'http://www.siu.univale.br/siu-portalaluno/Default.aspx'
-        if params_iniciais is None:
-            pedido_get = self.aluno.sessao.get(url_principal)
-            soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
-            params = {
-                '__VIEWSTATEENCRYPTED': '',
-                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-            }
-        else:
-            params = params_iniciais
+    def disciplina(self, link_pagina, parametros):
+        # Adicionamos/alteramos o parâmetro responsável por redirecionar a página
+        parametros['__EVENTTARGET'] = link_pagina
 
-        params['__EVENTTARGET'] = link_pagina
-
-        pedido_post = self.aluno.sessao.post(url_principal, data=params)
+        # Enviamos o pedido
+        pedido_post = self.aluno.sessao.post('http://www.siu.univale.br/siu-portalaluno/Default.aspx', data=parametros)
         soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
+        # Obtemos as informações básicas da disciplina
         nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
         professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
         situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0]
@@ -72,7 +61,9 @@ class Disciplinas(object):
         for a in soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input'):
             links_aps.append(a['name'])
 
-        # Pegamos as informações de cada APS individualmente
+        # Pegamos as informações de cada APS individualmente, para isso,
+        # precisamos visitar a página de cada APS individualmente, logo,
+        # temos que obter um novo conjunto de parâmetros
         parametros_aps = {
             '__VIEWSTATEENCRYPTED': '',
             '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
@@ -105,11 +96,10 @@ class Disciplinas(object):
         notas = []
         for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
             nota = t.find(id=lambda x: x and '_lbNota' in x)
-            '''
-            Verificamos se lbNota existe. Isso serve 
-            para diferenciar uma coluna de nota da 
-            coluna do total das notas
-            '''
+
+            # Verificamos se lbNota existe. Isso serve para
+            # diferenciar uma coluna de nota da coluna do total
+            # das notas
             if nota:
                 descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
                 data = t.find(id=lambda x: x and '_lbData' in x).contents[0]

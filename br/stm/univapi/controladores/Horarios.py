@@ -27,6 +27,8 @@ class Horarios(object):
                 nome_turno = turno[4:]
                 for tabela in tabela_tag.find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
                     hora_inicio_tag = tabela.find(id=lambda x: x and 'lbHrIni' in x)
+
+                    # Se a célula que estamos verificando é uma célula que mostra um horário
                     if hora_inicio_tag:
                         hora_termino = tabela.find(id=lambda x: x and 'lbHrTerm' in x).contents[0]
                         hora_inicio = hora_inicio_tag.contents[0]

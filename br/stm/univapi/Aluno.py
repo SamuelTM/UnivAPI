@@ -8,7 +8,6 @@ from br.stm.univapi.controladores.Mensagens import Mensagens
 
 
 class Aluno(object):
-
     def __init__(self, matricula, senha):
         self.matricula = matricula
         self.senha = senha
@@ -114,3 +113,14 @@ class Aluno(object):
 
     def url_avatar(self):
         return 'http://www.siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
+
+    '''
+    Retorna o coeficiente de desempenho acadêmico
+    do aluno. O valor está compreendido entre 0 e 1,
+    quanto maior o valor, melhor o desempenho.
+    '''
+
+    @staticmethod
+    def desempenho(disciplinas):
+        distribuicao = 1 / len(disciplinas)
+        return sum(disciplina.pontuacao(distribuicao) for disciplina in disciplinas)

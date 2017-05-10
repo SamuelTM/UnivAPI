@@ -22,7 +22,14 @@ class Disciplina(object):
     '''
 
     def pontos_distribuidos(self):
-        return sum(float(n.valor) for n in self.notas)
+        return sum(float(n.valor) for n in self.notas if float(n.nota) > 0)
+
+    '''
+    Retorna a porcentagem dos pontos ganhos
+    '''
+    def porcentagem_pontos(self):
+        pontos_distribuidos = self.pontos_distribuidos()
+        return self.pontos_ganhos() / pontos_distribuidos * 100 if pontos_distribuidos > 0 else 100
 
     '''
     Retorna uma lista com todas as APS pendentes
@@ -32,3 +39,10 @@ class Disciplina(object):
     def aps_pendentes(self):
         tempo_atual = datetime.now()
         return [a for a in self.aps if tempo_atual < a.prazo()]
+
+    '''
+    Retorna a pontuação da disciplina para
+    o coeficiente de desempenho acadêmico
+    '''
+    def pontuacao(self, distribuicao):
+        return self.porcentagem_pontos() * distribuicao / 100
