@@ -56,26 +56,29 @@ class Aluno(object):
                 pedido_get = self.sessao.get(url_cursos)
                 soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
                 # Percorremos cada curso exibido na tabela
-                for curso in soup.find(id=lambda x: x and 'grdCursos' in x).find_all(
-                        'tr', {'class': lambda x: x and 'ItemGrid' in x}):
-                    situacao = curso.find_all('td')[2].contents[0]
+                cursos = soup.find(id=lambda x: x and 'grdCursos' in x)
+                if cursos:
+                    for curso in cursos.find_all(
+                            'tr', {'class': lambda x: x and 'ItemGrid' in x}):
+                        situacao = curso.find_all('td')[2].contents[0]
 
-                    # Buscamos o curso que tem a situação "Frequente"
-                    if situacao.startswith('Frequente'):
-                        tag_link = curso.find('a')
-                        link = tag_link['href'].split('(\'')[1].split('\',')[0]
-                        # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
-                        parametros = {
-                            '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-                            '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-                            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-                            '__VIEWSTATEENCRYPTED': '',
-                            '__EVENTTARGET': link,
-                            'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|' + link
-                        }
-                        pedido_post = self.sessao.post(url_cursos, data=parametros)
-                        # Se tudo der certo esta função retorna True
-                        return pedido_post.status_code == 200
+                        # Buscamos o curso que tem a situação "Frequente"
+                        if situacao.startswith('Frequente'):
+                            tag_link = curso.find('a')
+                            link = tag_link['href'].split('(\'')[1].split('\',')[0]
+                            # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
+                            parametros = {
+                                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+                                '__VIEWSTATEENCRYPTED': '',
+                                '__EVENTTARGET': link,
+                                'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|' + link
+                            }
+                            pedido_post = self.sessao.post(url_cursos, data=parametros)
+                            # Se tudo der certo esta função retorna True
+                            return pedido_post.status_code == 200
+        return False
 
     '''
     Retorna o nome do aluno
