@@ -55,11 +55,11 @@ class Aluno(object):
                 url_cursos = 'http://www.siu.univale.br/SIU-PortalAluno/Curso.aspx?M=' + self.matricula
                 pedido_get = self.sessao.get(url_cursos)
                 soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
-                # Percorremos cada curso exibido na tabela
+                # Buscamos os cursos disponíveis na tabela
                 cursos = soup.find(id=lambda x: x and 'grdCursos' in x)
+                # Se existe algum curso na tabela
                 if cursos:
-                    for curso in cursos.find_all(
-                            'tr', {'class': lambda x: x and 'ItemGrid' in x}):
+                    for curso in cursos.find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
                         situacao = curso.find_all('td')[2].contents[0]
 
                         # Buscamos o curso que tem a situação "Frequente"
