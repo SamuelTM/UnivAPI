@@ -1,3 +1,5 @@
+import json
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -127,3 +129,16 @@ class Aluno(object):
     def desempenho(lst_disciplinas):
         distribuicao = 1 / len(lst_disciplinas)
         return sum(disciplina.pontuacao(distribuicao) for disciplina in lst_disciplinas)
+
+    '''
+    Retorna as informações do aluno em formato de dicionário (chave/valor)
+    para que sejam convertidas em formato JSON posteriormente
+    '''
+    def to_dict(self):
+        return dict(nome=self.nome(), email=self.email(), curso=self.curso())
+
+    '''
+    Retorna as informações básicas do aluno em formato JSON
+    '''
+    def to_json(self):
+        return json.dumps(self.to_dict(), ensure_ascii=False)
