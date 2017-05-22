@@ -27,6 +27,7 @@ class Disciplina(object):
     '''
     Retorna a porcentagem dos pontos ganhos
     '''
+
     def porcentagem_pontos(self):
         pontos_distribuidos = self.pontos_distribuidos()
         return self.pontos_ganhos() / pontos_distribuidos * 100 if pontos_distribuidos > 0 else 100
@@ -44,5 +45,6 @@ class Disciplina(object):
     Retorna a pontuação da disciplina para
     o coeficiente de desempenho acadêmico
     '''
+
     def pontuacao(self, distribuicao):
         return self.porcentagem_pontos() * distribuicao / 100

@@ -1,7 +1,9 @@
+import json
 from threading import Thread
 
 from bs4 import BeautifulSoup
 
+from br.stm.univapi.Serializador import Serializador
 from br.stm.univapi.modelos.Aps import Aps
 from br.stm.univapi.modelos.Disciplina import Disciplina
 from br.stm.univapi.modelos.Falta import Falta
@@ -54,7 +56,7 @@ class Disciplinas(object):
         # Obtemos as informações básicas da disciplina
         nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
         professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
-        situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0]
+        situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0].strip()
 
         # Pegamos os links de todas as APS
         links_aps = []
@@ -179,3 +181,9 @@ class Disciplinas(object):
             thread.join()
 
         return disciplinas
+
+    '''
+    Retorna todas as disciplinas em formato JSON
+    '''
+    def to_json(self):
+        return json.dumps([disciplina.__dict__ for disciplina in self.lista()], ensure_ascii=False, cls=Serializador)

@@ -1,3 +1,5 @@
+import json
+
 from bs4 import BeautifulSoup
 
 from br.stm.univapi.modelos.Mensagem import Mensagem
@@ -26,7 +28,7 @@ class Mensagens(object):
             pedido_post = self.aluno.sessao.post(url, data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
-            conteudo = soup.find('div', id='Corpo').contents[4]
+            conteudo = ' '.join(soup.find('div', id='Corpo').contents[4].replace('\n', ' ').split())
             lista.append(Mensagem(remetente, data, assunto, conteudo))
 
     '''
@@ -66,3 +68,9 @@ class Mensagens(object):
         self.get_mensagens(soup, mensagens, parametros, url)
 
         return mensagens
+
+    '''
+    Retorna todas as mensagens em formato JSON
+    '''
+    def to_json(self):
+        return json.dumps([mensagem.__dict__ for mensagem in self.lista()], ensure_ascii=False)

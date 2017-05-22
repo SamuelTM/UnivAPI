@@ -1,3 +1,5 @@
+import json
+
 from bs4 import BeautifulSoup
 
 from br.stm.univapi.modelos.Horario import Horario
@@ -47,3 +49,9 @@ class Horarios(object):
                             hrs.append(
                                 Horario(hora_inicio, hora_termino, professor, disciplina, sala, dia, nome_turno))
         return hrs
+
+    '''
+    Retorna todos os horários em formato JSON
+    '''
+    def to_json(self):
+        return json.dumps([horario.__dict__ for horario in self.lista()], ensure_ascii=False)

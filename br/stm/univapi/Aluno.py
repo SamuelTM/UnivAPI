@@ -124,6 +124,6 @@ class Aluno(object):
     '''
 
     @staticmethod
-    def desempenho(disciplinas):
-        distribuicao = 1 / len(disciplinas)
-        return sum(disciplina.pontuacao(distribuicao) for disciplina in disciplinas)
+    def desempenho(lst_disciplinas):
+        distribuicao = 1 / len(lst_disciplinas)
+        return sum(disciplina.pontuacao(distribuicao) for disciplina in lst_disciplinas)

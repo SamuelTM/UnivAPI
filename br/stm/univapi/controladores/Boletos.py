@@ -1,3 +1,5 @@
+import json
+
 from bs4 import BeautifulSoup
 
 from br.stm.univapi.modelos.Boleto import Boleto
@@ -65,3 +67,9 @@ class Boletos(object):
                 # Adicionamos os dados em um único objeto e então o adicionamos à lista
                 boletos.append(Boleto(ano_mes, vencimento, mensalidade, dependencia, desconto, liquido, situacao))
         return boletos
+
+    '''
+    Retorna todos os boletos em formato JSON
+    '''
+    def to_json(self):
+        return json.dumps([boleto.__dict__ for boleto in self.lista()], ensure_ascii=False)
