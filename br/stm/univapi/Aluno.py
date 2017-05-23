@@ -131,14 +131,8 @@ class Aluno(object):
         return sum(disciplina.pontuacao(distribuicao) for disciplina in lst_disciplinas)
 
     '''
-    Retorna as informações do aluno em formato de dicionário (chave/valor)
-    para que sejam convertidas em formato JSON posteriormente
-    '''
-    def to_dict(self):
-        return dict(nome=self.nome(), email=self.email(), curso=self.curso())
-
-    '''
     Retorna as informações básicas do aluno em formato JSON
     '''
+
     def to_json(self):
-        return json.dumps(self.to_dict(), ensure_ascii=False)
+        return json.dumps(dict(nome=self.nome(), email=self.email(), curso=self.curso()), ensure_ascii=False)
