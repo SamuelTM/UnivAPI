@@ -1,6 +1,3 @@
-from datetime import datetime
-
-
 class Disciplina(object):
     def __init__(self, nome, professor, situacao, notas, faltas, aps):
         self.nome = nome
@@ -38,13 +35,4 @@ class Disciplina(object):
     '''
 
     def aps_pendentes(self):
-        tempo_atual = datetime.now()
-        return [a for a in self.aps if tempo_atual < a.prazo()]
-
-    '''
-    Retorna a pontuação da disciplina para
-    o coeficiente de desempenho acadêmico
-    '''
-
-    def pontuacao(self, distribuicao):
-        return self.porcentagem_pontos() * distribuicao / 100
+        return [a for a in self.aps if a.tempo_restante() is not '0']

@@ -127,8 +127,12 @@ class Aluno(object):
 
     @staticmethod
     def desempenho(lst_disciplinas):
-        distribuicao = 1 / len(lst_disciplinas)
-        return sum(disciplina.pontuacao(distribuicao) for disciplina in lst_disciplinas)
+        total_ganho = 0
+        total_distribuido = 0
+        for disciplina in lst_disciplinas:
+            total_ganho += disciplina.pontos_ganhos()
+            total_distribuido += disciplina.pontos_distribuidos()
+        return total_ganho / total_distribuido
 
     '''
     Retorna as informações básicas do aluno em formato JSON

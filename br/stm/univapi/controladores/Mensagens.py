@@ -13,7 +13,7 @@ class Mensagens(object):
     Itera sobre cada mensagem da página fornecida,
     adicionando a mensagem à lista especificada
     '''
-    def get_mensagens(self, soup, lista, parametros, url):
+    def __get_mensagens(self, soup, lista, parametros, url):
         for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all('tr', {
                 'class': lambda x: x and 'ItemGrid' in x}):
             remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
@@ -50,7 +50,7 @@ class Mensagens(object):
         }
 
         # Obtemos as mensagens novas
-        self.get_mensagens(soup, mensagens, parametros, url)
+        self.__get_mensagens(soup, mensagens, parametros, url)
 
         # Mandamos um pedido para abrir a página de mensagens lidas
         parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$lkbLidas'
@@ -65,7 +65,7 @@ class Mensagens(object):
         })
 
         # Obtemos as mensagens lidas
-        self.get_mensagens(soup, mensagens, parametros, url)
+        self.__get_mensagens(soup, mensagens, parametros, url)
 
         return mensagens
 
