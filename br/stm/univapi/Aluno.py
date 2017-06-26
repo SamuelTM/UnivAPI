@@ -1,9 +1,8 @@
-import json
-
 import requests
 from bs4 import BeautifulSoup
 
 from br.stm.univapi.controladores.Boletos import Boletos
+from br.stm.univapi.controladores.DadosAluno import DadosAluno
 from br.stm.univapi.controladores.Disciplinas import Disciplinas
 from br.stm.univapi.controladores.Horarios import Horarios
 from br.stm.univapi.controladores.Mensagens import Mensagens
@@ -26,6 +25,7 @@ class Aluno(object):
         self.boletos = Boletos(self)
         self.mensagens = Mensagens(self)
         self.horarios = Horarios(self)
+        self.dados = DadosAluno(self)
 
     '''
     Inicia uma sessão no portal. Sem este
@@ -49,14 +49,18 @@ class Aluno(object):
                 '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
                 '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
             }
+
             # Mandamos um pedido POST com os parâmetros para a página de login
             pedido_post = self.sessao.post(url_login, params=parametros)
+
             # Se conseguimos autenticar com sucesso
             if pedido_post.status_code == 200 and 'novamente' not in pedido_post.text:
+
                 # Chamamos a página que exibe os cursos do aluno
                 url_cursos = 'http://www.siu.univale.br/SIU-PortalAluno/Curso.aspx?M=' + self.matricula
                 pedido_get = self.sessao.get(url_cursos)
                 soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+
                 # Buscamos os cursos disponíveis na tabela
                 cursos = soup.find(id=lambda x: x and 'grdCursos' in x)
                 # Se existe algum curso na tabela
@@ -83,34 +87,6 @@ class Aluno(object):
         return False
 
     '''
-    Retorna o nome do aluno
-    '''
-
-    def nome(self):
-        pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
-        soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
-        return soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbNomeAluno').contents[0].strip()
-
-    '''
-    Retorna o curso do aluno
-    '''
-
-    def curso(self):
-        pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
-        soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
-        # Por alguma razão a string do curso vem com espaços demais, então conserto isso assim
-        return ' '.join(soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbInfoCurso').contents[0].split())
-
-    '''
-    Retorna o email do aluno
-    '''
-
-    def email(self):
-        pagina_principal = self.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
-        soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
-        return soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbEmailAluno').contents[0].strip()
-
-    '''
     Retorna a URL do avatar do aluno. Lembrando
     que se o mesmo não possuir uma foto, a URL
     será inválida.
@@ -133,10 +109,3 @@ class Aluno(object):
             total_ganho += disciplina.pontos_ganhos()
             total_distribuido += disciplina.pontos_distribuidos()
         return total_ganho / total_distribuido
-
-    '''
-    Retorna as informações básicas do aluno em formato JSON
-    '''
-
-    def to_json(self):
-        return json.dumps(dict(nome=self.nome(), email=self.email(), curso=self.curso()), ensure_ascii=False)

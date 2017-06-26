@@ -15,28 +15,25 @@ class Disciplinas(object):
         self.aluno = aluno
 
     '''
-    Retorna um dict (chave/valor) com os nomes das disciplinas e os respectivos 
-    links para elas. Caso params não seja nulo, ele será usado para guardar
-    os parâmetros da página que acabamos de carregar neste método. Isso vai
-    poupar tempo mais tarde.
+    Retorna a quantidade de disciplinas que o aluno possui. Caso params não 
+    seja nulo, ele será usado para guardar os parâmetros da página que acabamos
+    de carregar neste método. Isso vai poupar tempo mais tarde.
     '''
 
-    def __nomes(self, parametros):
-        disciplinas = {}
-
+    def __numero_disciplinas(self, parametros):
         pedido_get = self.aluno.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
-        for d in soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True):
-            disciplinas[d.contents[0]] = d['href'].split('(\'')[1].split('\',')[0]
 
         if parametros is not None:
             parametros.update({
+                '__EVENTARGUMENT': '',
                 '__VIEWSTATEENCRYPTED': '',
                 '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
                 '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
                 '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
             })
-        return disciplinas
+
+        return len(soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True))
 
     def __obter_aps(self, soup):
         links_aps = []
@@ -123,18 +120,17 @@ class Disciplinas(object):
         return faltas
 
     '''
-    Retorna um objeto Disciplina com o link especificado.
-    Caso params_inicais seja fornecido, usaremos ele para
-    carregar a página da disciplina, caso contrário, carregaremos
-    os parâmetros necessários na hora.
+    Retorna um objeto Disciplina com o número especificado.
     '''
 
-    def __disciplina(self, link_pagina, parametros):
+    def __disciplina(self, numero_pagina, parametros):
         # Adicionamos/alteramos o parâmetro responsável por redirecionar a página
-        parametros['__EVENTTARGET'] = link_pagina
+        parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$DisciplinasAluno1$grdDisciplinasEmCurso$ctl' + str(
+            numero_pagina).zfill(2) + '$lkbDisicplina'
 
-        # Enviamos o pedido
-        pedido_post = self.aluno.sessao.post('http://www.siu.univale.br/siu-portalaluno/Default.aspx', data=parametros)
+        # Enviamos o pedido POST
+        pedido_post = self.aluno.sessao.post('https://siu.univale.br/SIU-PortalAluno/Default.aspx',
+                                             data=parametros)
         soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
         # Obtemos as informações básicas da disciplina
@@ -154,21 +150,19 @@ class Disciplinas(object):
         return Disciplina(nome, professor, situacao, notas, faltas, aps)
 
     '''
-    Adiciona a disciplina com o link especificado à lista
-    especificada. A diferença neste método é que a página
-    do portal é acessada em uma nova sessão. Este método
-    foi criado somente para podermos trabalhar com threads
-    e portanto, não é recomendado seu uso externo.
+    Adiciona a disciplina especificada à lista especificada.
+    A diferença neste método é que a página do portal pode ser
+    acessada em uma nova sessão, se assim for designado.
     '''
 
-    def __disciplina_thread(self, link_pagina, params_iniciais, lista_disciplinas, sessao_atual):
+    def __disciplina_thread(self, numero_pagina, params_iniciais, lista_disciplinas, sessao_atual):
         if not sessao_atual:
             from br.stm.univapi.Aluno import Aluno
             aluno = Aluno(self.aluno.matricula, self.aluno.senha)
             if aluno.autenticar():
-                lista_disciplinas.append(aluno.disciplinas.__disciplina(link_pagina, params_iniciais))
+                lista_disciplinas.append(aluno.disciplinas.__disciplina(numero_pagina, params_iniciais))
         else:
-            lista_disciplinas.append(self.__disciplina(link_pagina, params_iniciais))
+            lista_disciplinas.append(self.__disciplina(numero_pagina, params_iniciais))
 
     '''
     Retorna uma lista de objetos Disciplina
@@ -178,18 +172,15 @@ class Disciplinas(object):
     def lista(self):
         disciplinas = []
         parametros = {}
-        nomes = self.__nomes(parametros)
+        n_disciplinas = self.__numero_disciplinas(parametros)
 
-        # Separamos uma disciplina para ser retornada na sessão atual
-        primeiro_nome = nomes.popitem()
+        threads = []
 
-        # Criamos uma thread para cada uma do resto das disciplinas
-        threads = list(map(
-            lambda nome: Thread(target=self.__disciplina_thread, args=(nomes[nome], parametros, disciplinas, False)),
-            nomes))
+        for i in range(2, n_disciplinas + 1):
+            threads.append(
+                Thread(target=self.__disciplina_thread, args=(i + 1, parametros, disciplinas, False)))
 
-        # Adicionamos a disciplina que separamos anteriormente à lista de threads
-        threads.append(Thread(target=self.__disciplina_thread, args=(primeiro_nome[1], parametros, disciplinas, True)))
+        threads.append(Thread(target=self.__disciplina_thread, args=(2, parametros, disciplinas, True)))
 
         for thread in threads:
             thread.start()

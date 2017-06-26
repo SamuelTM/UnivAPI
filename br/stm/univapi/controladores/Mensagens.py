@@ -13,9 +13,10 @@ class Mensagens(object):
     Itera sobre cada mensagem da página fornecida,
     adicionando a mensagem à lista especificada
     '''
+
     def __get_mensagens(self, soup, lista, parametros, url):
-        for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all('tr', {
-                'class': lambda x: x and 'ItemGrid' in x}):
+        for msg in soup.find(
+                id=lambda x: x and '_gvMensagem' in x).find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
             remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
             data = msg.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
 
@@ -38,15 +39,17 @@ class Mensagens(object):
 
     def lista(self):
         mensagens = []
-        url = 'http://www.siu.univale.br/SIU-PortalAluno/CaixaPostal/CaixaPostal.aspx'
+        url = 'https://siu.univale.br/SIU-PortalAluno/CaixaPostal/CaixaPostal.aspx'
         pedido_get = self.aluno.sessao.get(url)
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
         parametros = {
             '__VIEWSTATEENCRYPTED': '',
+            '__EVENTARGUMENT': '',
             '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
             '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+            '__PREVIOUSPAGE': soup.find('input', {'name': '__PREVIOUSPAGE'})['value']
         }
 
         # Obtemos as mensagens novas
@@ -61,7 +64,8 @@ class Mensagens(object):
         parametros.update({
             '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
             '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
+            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+            '__PREVIOUSPAGE': soup.find('input', {'name': '__PREVIOUSPAGE'})['value']
         })
 
         # Obtemos as mensagens lidas
@@ -72,5 +76,6 @@ class Mensagens(object):
     '''
     Retorna todas as mensagens em formato JSON
     '''
+
     def to_json(self):
         return json.dumps([mensagem.__dict__ for mensagem in self.lista()], ensure_ascii=False)
