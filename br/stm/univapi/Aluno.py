@@ -44,13 +44,13 @@ class Aluno(object):
                 'ctl00$ContentPlaceHolder1$txtMatricula': self.matricula,
                 'ctl00$ContentPlaceHolder1$txtSenha': self.senha,
                 'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolder1$btnLogar',
+                '__VIEWSTATEENCRYPTED': '',
                 '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
                 '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
                 '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
             }
             # Mandamos um pedido POST com os parâmetros para a página de login
-            pedido_post = self.sessao.post(url_login, data=parametros)
-
+            pedido_post = self.sessao.post(url_login, params=parametros)
             # Se conseguimos autenticar com sucesso
             if pedido_post.status_code == 200 and 'novamente' not in pedido_post.text:
                 # Chamamos a página que exibe os cursos do aluno

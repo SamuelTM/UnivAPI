@@ -27,8 +27,7 @@ class Aps(object):
     '''
 
     def tempo_restante(self):
-        tempo_atual = datetime.now()
-        segundos = (self.prazo() - tempo_atual).total_seconds()
+        segundos = (self.prazo() - datetime.now()).total_seconds()
         if segundos > 0:
             m, s = divmod(segundos, 60)
             h, m = divmod(m, 60)
