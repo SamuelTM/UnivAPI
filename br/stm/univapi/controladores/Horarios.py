@@ -16,7 +16,7 @@ class Horarios(object):
 
     def lista(self):
         hrs = []
-        pedido_get = self.aluno.sessao.get('http://www.siu.univale.br/SIU-PortalAluno/HorarioAulas/Horario.aspx')
+        pedido_get = self.aluno.sessao.get('https://siu.univale.br/SIU-PortalAluno/HorarioAulas/Horario.aspx')
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
         turnos = ['_grdMatutino', '_grdVespertino', '_grdNoturno']
 

@@ -31,7 +31,7 @@ class Boletos(object):
      '''
 
     def lista(self):
-        url = 'http://www.siu.univale.br/SIU-PortalAluno/Financeiro/Titulos.aspx'
+        url = 'https://siu.univale.br/SIU-PortalAluno/Financeiro/Titulos.aspx'
         pagina_boleto = self.aluno.sessao.get(url)
         soup = BeautifulSoup(pagina_boleto.content.decode('utf-8'), 'html5lib')
         boletos = []

@@ -21,7 +21,7 @@ class Disciplinas(object):
     '''
 
     def __numero_disciplinas(self, parametros):
-        pedido_get = self.aluno.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
+        pedido_get = self.aluno.sessao.get('https://siu.univale.br/siu-portalaluno/Default.aspx')
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
         if parametros is not None:
@@ -54,7 +54,7 @@ class Disciplinas(object):
             # Adicionamos o parâmetro necessário para abrir a página da APS
             parametros_aps[link_pagina] = 'Visualizar'
 
-            pedido_post = self.aluno.sessao.post('http://www.siu.univale.br/SIU-PortalAluno/OpcoesDisciplinas.aspx',
+            pedido_post = self.aluno.sessao.post('https://siu.univale.br/SIU-PortalAluno/OpcoesDisciplinas.aspx',
                                                  data=parametros_aps)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
             tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)

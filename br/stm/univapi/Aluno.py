@@ -1,3 +1,5 @@
+import platform
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -33,7 +35,7 @@ class Aluno(object):
     '''
 
     def autenticar(self):
-        url_login = 'http://www.siu.univale.br/SIU-PortalAluno/Login.aspx'
+        url_login = 'http://siu.univale.br/SIU-PortalAluno/Login.aspx'
         pedido_get = self.sessao.get(url_login)
 
         if pedido_get.status_code == 200:
@@ -51,13 +53,14 @@ class Aluno(object):
             }
 
             # Mandamos um pedido POST com os parâmetros para a página de login
-            pedido_post = self.sessao.post(url_login, params=parametros)
-
+            pedido_post = self.sessao.post(url_login,
+                                           data=parametros) if 'Windows' in platform.system() else self.sessao.post(
+                url_login, params=parametros)
             # Se conseguimos autenticar com sucesso
             if pedido_post.status_code == 200 and 'novamente' not in pedido_post.text:
 
                 # Chamamos a página que exibe os cursos do aluno
-                url_cursos = 'http://www.siu.univale.br/SIU-PortalAluno/Curso.aspx?M=' + self.matricula
+                url_cursos = 'http://siu.univale.br/SIU-PortalAluno/Curso.aspx?M=' + self.matricula
                 pedido_get = self.sessao.get(url_cursos)
                 soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
@@ -93,7 +96,7 @@ class Aluno(object):
     '''
 
     def url_avatar(self):
-        return 'http://www.siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
+        return 'https://siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
 
     '''
     Retorna o coeficiente de desempenho acadêmico

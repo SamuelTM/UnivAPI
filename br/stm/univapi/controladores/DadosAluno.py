@@ -13,7 +13,7 @@ class DadosAluno(object):
 
     def lista(self):
         dados = []
-        pagina_principal = self.aluno.sessao.get('http://www.siu.univale.br/siu-portalaluno/Default.aspx')
+        pagina_principal = self.aluno.sessao.get('http://siu.univale.br/SIU-PortalAluno/Default.aspx')
         soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
         # Nome do aluno
         dados.append(soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbNomeAluno').contents[0].strip())
