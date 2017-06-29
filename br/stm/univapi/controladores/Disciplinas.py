@@ -3,7 +3,9 @@ from threading import Thread
 
 from bs4 import BeautifulSoup
 
-from br.stm.univapi.Serializador import Serializador
+from br.stm.univapi.auxiliares import Paginas
+from br.stm.univapi.auxiliares.Paginas import Pagina
+from br.stm.univapi.auxiliares.Serializador import Serializador
 from br.stm.univapi.modelos.Aps import Aps
 from br.stm.univapi.modelos.Disciplina import Disciplina
 from br.stm.univapi.modelos.Falta import Falta
@@ -21,7 +23,7 @@ class Disciplinas(object):
     '''
 
     def __numero_disciplinas(self, parametros):
-        pedido_get = self.aluno.sessao.get('https://siu.univale.br/siu-portalaluno/Default.aspx')
+        pedido_get = self.aluno.sessao.get(Paginas.get_url(Pagina.principal, True))
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
         if parametros is not None:
@@ -54,8 +56,7 @@ class Disciplinas(object):
             # Adicionamos o parâmetro necessário para abrir a página da APS
             parametros_aps[link_pagina] = 'Visualizar'
 
-            pedido_post = self.aluno.sessao.post('https://siu.univale.br/SIU-PortalAluno/OpcoesDisciplinas.aspx',
-                                                 data=parametros_aps)
+            pedido_post = self.aluno.sessao.post(Paginas.get_url(Pagina.disciplina, True), data=parametros_aps)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
             tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
 
@@ -124,30 +125,32 @@ class Disciplinas(object):
     '''
 
     def __disciplina(self, numero_pagina, parametros):
-        # Adicionamos/alteramos o parâmetro responsável por redirecionar a página
-        parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$DisciplinasAluno1$grdDisciplinasEmCurso$ctl' + str(
-            numero_pagina).zfill(2) + '$lkbDisicplina'
+        try:
+            # Adicionamos/alteramos o parâmetro responsável por redirecionar a página
+            parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$DisciplinasAluno1$grdDisciplinasEmCurso$ctl' + str(
+                numero_pagina).zfill(2) + '$lkbDisicplina'
 
-        # Enviamos o pedido POST
-        pedido_post = self.aluno.sessao.post('https://siu.univale.br/SIU-PortalAluno/Default.aspx',
-                                             data=parametros)
-        soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+            # Enviamos o pedido POST
+            pedido_post = self.aluno.sessao.post(Paginas.get_url(Pagina.principal, True), data=parametros)
+            soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
-        # Obtemos as informações básicas da disciplina
-        nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
-        professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
-        situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0].strip()
+            # Obtemos as informações básicas da disciplina
+            nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
+            professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
+            situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0].strip()
 
-        # Obtemos as APS
-        aps = self.__obter_aps(soup)
+            # Obtemos as APS
+            aps = self.__obter_aps(soup)
 
-        # Obtemos as notas
-        notas = self.__obter_notas(soup)
+            # Obtemos as notas
+            notas = self.__obter_notas(soup)
 
-        # Obtemos as faltas
-        faltas = self.__obter_faltas(soup)
+            # Obtemos as faltas
+            faltas = self.__obter_faltas(soup)
 
-        return Disciplina(nome, professor, situacao, notas, faltas, aps)
+            return Disciplina(nome, professor, situacao, notas, faltas, aps)
+        except AttributeError:
+            return None
 
     '''
     Adiciona a disciplina especificada à lista especificada.
@@ -174,18 +177,19 @@ class Disciplinas(object):
         parametros = {}
         n_disciplinas = self.__numero_disciplinas(parametros)
 
-        threads = []
+        if n_disciplinas > 0:
+            threads = []
 
-        for i in range(2, n_disciplinas + 1):
-            threads.append(
-                Thread(target=self.__disciplina_thread, args=(i + 1, parametros, disciplinas, False)))
+            for i in range(2, n_disciplinas + 1):
+                threads.append(
+                    Thread(target=self.__disciplina_thread, args=(i + 1, parametros, disciplinas, False)))
 
-        threads.append(Thread(target=self.__disciplina_thread, args=(2, parametros, disciplinas, True)))
+            threads.append(Thread(target=self.__disciplina_thread, args=(2, parametros, disciplinas, True)))
 
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
 
         return disciplinas
 

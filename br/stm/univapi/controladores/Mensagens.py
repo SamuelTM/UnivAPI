@@ -2,6 +2,8 @@ import json
 
 from bs4 import BeautifulSoup
 
+from br.stm.univapi.auxiliares import Paginas
+from br.stm.univapi.auxiliares.Paginas import Pagina
 from br.stm.univapi.modelos.Mensagem import Mensagem
 
 
@@ -39,38 +41,40 @@ class Mensagens(object):
 
     def lista(self):
         mensagens = []
-        url = 'https://siu.univale.br/SIU-PortalAluno/CaixaPostal/CaixaPostal.aspx'
-        pedido_get = self.aluno.sessao.get(url)
-        soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+        try:
+            url = Paginas.get_url(Pagina.mensagens, True)
+            pedido_get = self.aluno.sessao.get(url)
+            soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
-        parametros = {
-            '__VIEWSTATEENCRYPTED': '',
-            '__EVENTARGUMENT': '',
-            '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-            '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-            '__PREVIOUSPAGE': soup.find('input', {'name': '__PREVIOUSPAGE'})['value']
-        }
+            parametros = {
+                '__VIEWSTATEENCRYPTED': '',
+                '__EVENTARGUMENT': '',
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+                '__PREVIOUSPAGE': soup.find('input', {'name': '__PREVIOUSPAGE'})['value']
+            }
 
-        # Obtemos as mensagens novas
-        self.__get_mensagens(soup, mensagens, parametros, url)
+            # Obtemos as mensagens novas
+            self.__get_mensagens(soup, mensagens, parametros, url)
 
-        # Mandamos um pedido para abrir a página de mensagens lidas
-        parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$lkbLidas'
+            # Mandamos um pedido para abrir a página de mensagens lidas
+            parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$lkbLidas'
 
-        pedido_post = self.aluno.sessao.post(url, data=parametros)
-        soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+            pedido_post = self.aluno.sessao.post(url, data=parametros)
+            soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
-        parametros.update({
-            '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-            '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-            '__PREVIOUSPAGE': soup.find('input', {'name': '__PREVIOUSPAGE'})['value']
-        })
+            parametros.update({
+                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
+                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+                '__PREVIOUSPAGE': soup.find('input', {'name': '__PREVIOUSPAGE'})['value']
+            })
 
-        # Obtemos as mensagens lidas
-        self.__get_mensagens(soup, mensagens, parametros, url)
-
+            # Obtemos as mensagens lidas
+            self.__get_mensagens(soup, mensagens, parametros, url)
+        except AttributeError:
+            pass
         return mensagens
 
     '''

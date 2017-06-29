@@ -3,8 +3,10 @@ import platform
 import requests
 from bs4 import BeautifulSoup
 
+from br.stm.univapi.auxiliares import Paginas
+from br.stm.univapi.auxiliares.Paginas import Pagina
 from br.stm.univapi.controladores.Boletos import Boletos
-from br.stm.univapi.controladores.DadosAluno import DadosAluno
+from br.stm.univapi.controladores.Perfil import Perfil
 from br.stm.univapi.controladores.Disciplinas import Disciplinas
 from br.stm.univapi.controladores.Horarios import Horarios
 from br.stm.univapi.controladores.Mensagens import Mensagens
@@ -27,7 +29,7 @@ class Aluno(object):
         self.boletos = Boletos(self)
         self.mensagens = Mensagens(self)
         self.horarios = Horarios(self)
-        self.dados = DadosAluno(self)
+        self.perfil = Perfil(self)
 
     '''
     Inicia uma sessão no portal. Sem este
@@ -35,7 +37,8 @@ class Aluno(object):
     '''
 
     def autenticar(self):
-        url_login = 'http://siu.univale.br/SIU-PortalAluno/Login.aspx'
+        url_login = Paginas.get_url(Pagina.login, False)
+
         pedido_get = self.sessao.get(url_login)
 
         if pedido_get.status_code == 200:
@@ -53,50 +56,53 @@ class Aluno(object):
             }
 
             # Mandamos um pedido POST com os parâmetros para a página de login
-            pedido_post = self.sessao.post(url_login,
-                                           data=parametros) if 'Windows' in platform.system() else self.sessao.post(
+
+            # Por alguma razão, os parâmetros só são enviados
+            # corretamente em sistemas Windows se são passados
+            # como "data" ao invés de "params"
+
+            windows = 'Windows' in platform.system()
+            pedido_post = self.sessao.post(url_login, data=parametros) if windows else self.sessao.post(
                 url_login, params=parametros)
+
             # Se conseguimos autenticar com sucesso
             if pedido_post.status_code == 200 and 'novamente' not in pedido_post.text:
 
-                # Chamamos a página que exibe os cursos do aluno
-                url_cursos = 'http://siu.univale.br/SIU-PortalAluno/Curso.aspx?M=' + self.matricula
-                pedido_get = self.sessao.get(url_cursos)
-                soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+                # Se já fomos redirecionados para o portal automaticamente
+                if 'Desconectar' in pedido_post.text:
+                    return True
+                else:
+                    # Senão, sabemos que temos que selecionar o curso,
+                    # então chamamos a página de cursos
+                    url_cursos = Paginas.get_url(Pagina.cursos, True) + '?M=' + self.matricula
+                    pedido_get = self.sessao.get(url_cursos)
+                    soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
-                # Buscamos os cursos disponíveis na tabela
-                cursos = soup.find(id=lambda x: x and 'grdCursos' in x)
-                # Se existe algum curso na tabela
-                if cursos:
-                    for curso in cursos.find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
-                        situacao = curso.find_all('td')[2].contents[0]
+                    # Buscamos os cursos disponíveis na tabela
+                    cursos = soup.find(id=lambda x: x and 'grdCursos' in x)
+                    # Se existe algum curso na tabela
+                    if cursos:
+                        for curso in cursos.find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
+                            situacao = curso.find_all('td')[2].contents[0]
 
-                        # Buscamos o curso que tem a situação "Frequente"
-                        if situacao.startswith('Frequente'):
-                            tag_link = curso.find('a')
-                            link = tag_link['href'].split('(\'')[1].split('\',')[0]
-                            # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
-                            parametros = {
-                                '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-                                '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})['value'],
-                                '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-                                '__VIEWSTATEENCRYPTED': '',
-                                '__EVENTTARGET': link,
-                                'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|' + link
-                            }
-                            pedido_post = self.sessao.post(url_cursos, data=parametros)
-                            # Se tudo der certo esta função retorna True
-                            return pedido_post.status_code == 200
+                            # Buscamos o curso que tem a situação "Frequente"
+                            if situacao.startswith('Frequente'):
+                                tag_link = curso.find('a')
+                                link = tag_link['href'].split('(\'')[1].split('\',')[0]
+                                # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
+                                parametros = {
+                                    '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                                    '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})[
+                                        'value'],
+                                    '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+                                    '__VIEWSTATEENCRYPTED': '',
+                                    '__EVENTTARGET': link,
+                                    'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|' + link
+                                }
+                                pedido_post = self.sessao.post(url_cursos, data=parametros)
+                                # Se tudo der certo esta função retorna True
+                                return pedido_post.status_code == 200
         return False
-
-    '''
-    Retorna a URL do avatar do aluno. Lembrando
-    que se o mesmo não possuir uma foto, a URL
-    será inválida.
-    '''
-
-    def url_avatar(self):
-        return 'https://siu.univale.br/_Fotos/alunos/' + str(self.matricula) + '.jpg'
 
     '''
     Retorna o coeficiente de desempenho acadêmico
