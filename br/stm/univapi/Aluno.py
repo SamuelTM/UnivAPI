@@ -113,7 +113,7 @@ class Aluno(object):
     @staticmethod
     def desempenho(lst_disciplinas):
         total_ganho = 0
-        total_distribuido = 0
+        total_distribuido = 1
         for disciplina in lst_disciplinas:
             total_ganho += disciplina.pontos_ganhos()
             total_distribuido += disciplina.pontos_distribuidos()

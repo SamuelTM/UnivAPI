@@ -1,6 +1,8 @@
 import json
 
 from bs4 import BeautifulSoup
+from requests import HTTPError
+from urllib3.exceptions import ProtocolError
 
 from br.stm.univapi.auxiliares import Paginas
 from br.stm.univapi.auxiliares.Paginas import Pagina
@@ -62,8 +64,8 @@ class Boletos(object):
 
                     # Coletamos as informações de cada boleto na tabela
                     self.__adicionar_boletos(soup, boletos)
-        except AttributeError:
-            pass
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            boletos.clear()
         return boletos
 
     '''

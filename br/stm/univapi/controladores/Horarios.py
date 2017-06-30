@@ -1,6 +1,7 @@
 import json
 
 from bs4 import BeautifulSoup
+from urllib3.exceptions import ProtocolError
 
 from br.stm.univapi.auxiliares import Paginas
 from br.stm.univapi.auxiliares.Paginas import Pagina
@@ -51,8 +52,8 @@ class Horarios(object):
                                 # Adicionamos o horário à lista
                                 hrs.append(
                                     Horario(hora_inicio, hora_termino, professor, disciplina, sala, dia, nome_turno))
-        except AttributeError:
-            pass
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            hrs.clear()
         return hrs
 
     '''

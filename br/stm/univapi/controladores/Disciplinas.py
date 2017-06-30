@@ -2,6 +2,7 @@ import json
 from threading import Thread
 
 from bs4 import BeautifulSoup
+from urllib3.exceptions import ProtocolError
 
 from br.stm.univapi.auxiliares import Paginas
 from br.stm.univapi.auxiliares.Paginas import Pagina
@@ -149,7 +150,7 @@ class Disciplinas(object):
             faltas = self.__obter_faltas(soup)
 
             return Disciplina(nome, professor, situacao, notas, faltas, aps)
-        except AttributeError:
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
             return None
 
     '''

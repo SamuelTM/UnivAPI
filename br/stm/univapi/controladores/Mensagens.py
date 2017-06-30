@@ -1,6 +1,7 @@
 import json
 
 from bs4 import BeautifulSoup
+from urllib3.exceptions import ProtocolError
 
 from br.stm.univapi.auxiliares import Paginas
 from br.stm.univapi.auxiliares.Paginas import Pagina
@@ -17,21 +18,26 @@ class Mensagens(object):
     '''
 
     def __get_mensagens(self, soup, lista, parametros, url):
-        for msg in soup.find(
-                id=lambda x: x and '_gvMensagem' in x).find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
+        for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all(
+                'tr', {'class': lambda x: x and 'ItemGrid' in x}):
+            # Nome do remetente
             remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
+            # Data de recebimento
             data = msg.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
 
             tag_assunto = msg.find('a', id=lambda x: x and '_lkbAssunto' in x)
+            # Assunto da mensagem
             assunto = ' '.join(tag_assunto.contents[0].split())
 
             link_mensagem = tag_assunto['href'].split('(\'')[1].split('\',')[0]
             parametros['__EVENTTARGET'] = link_mensagem
 
+            # Abrimos a página da mensagem para ver seu conteúdo
             pedido_post = self.aluno.sessao.post(url, data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
-
+            # Conteúdo da mensagem
             conteudo = ' '.join(soup.find('div', id='Corpo').contents[4].replace('\n', ' ').split())
+
             lista.append(Mensagem(remetente, data, assunto, conteudo))
 
     '''
@@ -73,8 +79,8 @@ class Mensagens(object):
 
             # Obtemos as mensagens lidas
             self.__get_mensagens(soup, mensagens, parametros, url)
-        except AttributeError:
-            pass
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            mensagens.clear()
         return mensagens
 
     '''

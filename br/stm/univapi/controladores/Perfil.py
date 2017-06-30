@@ -1,6 +1,7 @@
 import json
 
 from bs4 import BeautifulSoup
+from urllib3.exceptions import ProtocolError
 
 from br.stm.univapi.auxiliares import Paginas
 from br.stm.univapi.auxiliares.Paginas import Pagina
@@ -26,8 +27,8 @@ class Perfil(object):
             dados.append(' '.join(soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbInfoCurso').contents[0].split()))
             # Email do aluno
             dados.append(soup.find(id='ctl00_ContentPlaceHolder1_Aluno1_lbEmailAluno').contents[0].strip())
-        except AttributeError:
-            pass
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            dados.clear()
         return dados
 
     '''
