@@ -1,7 +1,6 @@
 import json
 
 from bs4 import BeautifulSoup
-from requests import HTTPError
 from urllib3.exceptions import ProtocolError
 
 from br.stm.univapi.auxiliares import Paginas

@@ -8,7 +8,8 @@ class Pagina(Enum):
     mensagens = 4,
     boletos = 5,
     horarios = 6,
-    cursos = 7
+    cursos = 7,
+    boletim = 8
 
 
 '''
@@ -35,4 +36,6 @@ def get_url(pagina, https):
         url = url + 'HorarioAulas/Horario.aspx'
     elif pagina == Pagina.cursos:
         url = url + 'Curso.aspx'
+    elif pagina == Pagina.boletim:
+        url = url + 'Boletim/Boletim.aspx'
     return url

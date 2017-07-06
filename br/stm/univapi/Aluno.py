@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 
 from br.stm.univapi.auxiliares import Paginas
 from br.stm.univapi.auxiliares.Paginas import Pagina
+from br.stm.univapi.controladores.Boletins import Boletins
 from br.stm.univapi.controladores.Boletos import Boletos
 from br.stm.univapi.controladores.Perfil import Perfil
 from br.stm.univapi.controladores.Disciplinas import Disciplinas
@@ -30,6 +31,7 @@ class Aluno(object):
         self.mensagens = Mensagens(self)
         self.horarios = Horarios(self)
         self.perfil = Perfil(self)
+        self.boletins = Boletins(self)
 
     '''
     Inicia uma sessão no portal. Sem este
