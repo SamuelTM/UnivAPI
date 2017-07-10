@@ -4,13 +4,13 @@ from threading import Thread
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from br.stm.univapi.auxiliares import Paginas
-from br.stm.univapi.auxiliares.Paginas import Pagina
-from br.stm.univapi.auxiliares.Serializador import Serializador
-from br.stm.univapi.modelos.Aps import Aps
-from br.stm.univapi.modelos.Disciplina import Disciplina
-from br.stm.univapi.modelos.Falta import Falta
-from br.stm.univapi.modelos.Nota import Nota
+from stm.univapi import Aps
+from stm.univapi import Disciplina
+from stm.univapi import Falta
+from stm.univapi import Nota
+from stm.univapi import Pagina
+from stm.univapi import Serializador
+from stm.univapi import paginas
 
 
 class Disciplinas(object):
@@ -24,7 +24,7 @@ class Disciplinas(object):
     '''
 
     def __numero_disciplinas(self, parametros):
-        pedido_get = self.aluno.sessao.get(Paginas.get_url(Pagina.principal, True))
+        pedido_get = self.aluno.sessao.get(paginas.get_url(Pagina.principal, True))
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
         if parametros is not None:
@@ -40,8 +40,9 @@ class Disciplinas(object):
 
     def __obter_aps(self, soup):
         links_aps = []
-        for a in soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input'):
-            links_aps.append(a['name'])
+        tabela_aps = soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input')
+        for linha_tabela in tabela_aps:
+            links_aps.append(linha_tabela['name'])
 
         # Pegamos as informações de cada APS individualmente, para isso,
         # precisamos visitar a página de cada APS individualmente, logo,
@@ -57,7 +58,7 @@ class Disciplinas(object):
             # Adicionamos o parâmetro necessário para abrir a página da APS
             parametros_aps[link_pagina] = 'Visualizar'
 
-            pedido_post = self.aluno.sessao.post(Paginas.get_url(Pagina.disciplina, True), data=parametros_aps)
+            pedido_post = self.aluno.sessao.post(paginas.get_url(Pagina.disciplina, True), data=parametros_aps)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
             tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
 
@@ -132,7 +133,7 @@ class Disciplinas(object):
                 numero_pagina).zfill(2) + '$lkbDisicplina'
 
             # Enviamos o pedido POST
-            pedido_post = self.aluno.sessao.post(Paginas.get_url(Pagina.principal, True), data=parametros)
+            pedido_post = self.aluno.sessao.post(paginas.get_url(Pagina.principal, True), data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
             # Obtemos as informações básicas da disciplina
@@ -161,7 +162,7 @@ class Disciplinas(object):
 
     def __disciplina_thread(self, numero_pagina, params_iniciais, lista_disciplinas, sessao_atual):
         if not sessao_atual:
-            from br.stm.univapi.Aluno import Aluno
+            from stm.univapi import Aluno
             aluno = Aluno(self.aluno.matricula, self.aluno.senha)
             if aluno.autenticar():
                 lista_disciplinas.append(aluno.disciplinas.__disciplina(numero_pagina, params_iniciais))

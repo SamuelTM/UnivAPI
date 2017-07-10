@@ -1,16 +1,16 @@
 import platform
 
 import requests
+from br.stm.univapi.auxiliares import paginas
+from br.stm.univapi.auxiliares.paginas import Pagina
+from br.stm.univapi.controladores.boletos import Boletos
+from br.stm.univapi.controladores.disciplinas import Disciplinas
+from br.stm.univapi.controladores.horarios import Horarios
+from br.stm.univapi.controladores.mensagens import Mensagens
+from br.stm.univapi.controladores.perfil import Perfil
 from bs4 import BeautifulSoup
 
-from br.stm.univapi.auxiliares import Paginas
-from br.stm.univapi.auxiliares.Paginas import Pagina
-from br.stm.univapi.controladores.Boletins import Boletins
-from br.stm.univapi.controladores.Boletos import Boletos
-from br.stm.univapi.controladores.Perfil import Perfil
-from br.stm.univapi.controladores.Disciplinas import Disciplinas
-from br.stm.univapi.controladores.Horarios import Horarios
-from br.stm.univapi.controladores.Mensagens import Mensagens
+from stm.univapi.controladores.boletins import Boletins
 
 
 class Aluno(object):
@@ -39,7 +39,7 @@ class Aluno(object):
     '''
 
     def autenticar(self):
-        url_login = Paginas.get_url(Pagina.login, False)
+        url_login = paginas.get_url(Pagina.login, False)
 
         pedido_get = self.sessao.get(url_login)
 
@@ -76,7 +76,7 @@ class Aluno(object):
                 else:
                     # Senão, sabemos que temos que selecionar o curso,
                     # então chamamos a página de cursos
-                    url_cursos = Paginas.get_url(Pagina.cursos, True) + '?M=' + self.matricula
+                    url_cursos = paginas.get_url(Pagina.cursos, True) + '?M=' + self.matricula
                     pedido_get = self.sessao.get(url_cursos)
                     soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
