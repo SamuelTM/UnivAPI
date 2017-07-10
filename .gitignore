@@ -52,4 +52,5 @@ Temporary Items
 
 # Arquivo para testar o projeto
 stm/univapi/teste.py
-/stm/univapi/principal.py
+
+stm/univapi/principal.py
