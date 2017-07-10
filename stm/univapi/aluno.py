@@ -1,16 +1,16 @@
 import platform
 
 import requests
-from br.stm.univapi.auxiliares import paginas
-from br.stm.univapi.auxiliares.paginas import Pagina
-from br.stm.univapi.controladores.boletos import Boletos
-from br.stm.univapi.controladores.disciplinas import Disciplinas
-from br.stm.univapi.controladores.horarios import Horarios
-from br.stm.univapi.controladores.mensagens import Mensagens
-from br.stm.univapi.controladores.perfil import Perfil
 from bs4 import BeautifulSoup
 
+from stm.univapi.auxiliares import paginas
+from stm.univapi.auxiliares.paginas import Pagina
 from stm.univapi.controladores.boletins import Boletins
+from stm.univapi.controladores.boletos import Boletos
+from stm.univapi.controladores.disciplinas import Disciplinas
+from stm.univapi.controladores.horarios import Horarios
+from stm.univapi.controladores.mensagens import Mensagens
+from stm.univapi.controladores.perfil import Perfil
 
 
 class Aluno(object):

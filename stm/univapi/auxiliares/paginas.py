@@ -19,7 +19,7 @@ alterar alguma URL, basta alterar esta função.
 '''
 
 
-def get_url(pagina, https):
+def get_url(pagina: Pagina, https: bool) -> str:
     url = 'https://siu.univale.br/SIU-PortalAluno/' if https else 'http://siu.univale.br/SIU-PortalAluno/'
 
     if pagina == Pagina.login:

@@ -1,14 +1,15 @@
 import json
 
-from br.stm.univapi.auxiliares import paginas
-from br.stm.univapi.auxiliares.paginas import Pagina
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
+from stm.univapi.auxiliares import paginas
+from stm.univapi.auxiliares.controlador import Controlador
+from stm.univapi.auxiliares.paginas import Pagina
 from stm.univapi.modelos.mensagem import Mensagem
 
 
-class Mensagens(object):
+class Mensagens(Controlador):
     def __init__(self, aluno):
         self.aluno = aluno
 
@@ -17,7 +18,7 @@ class Mensagens(object):
     adicionando a mensagem à lista especificada
     '''
 
-    def __get_mensagens(self, soup, lista, parametros, url):
+    def __add_mensagens(self, soup, lista, parametros, url):
         for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all(
                 'tr', {'class': lambda x: x and 'ItemGrid' in x}):
             # Nome do remetente
@@ -62,7 +63,7 @@ class Mensagens(object):
             }
 
             # Obtemos as mensagens novas
-            self.__get_mensagens(soup, mensagens, parametros, url)
+            self.__add_mensagens(soup, mensagens, parametros, url)
 
             # Mandamos um pedido para abrir a página de mensagens lidas
             parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$lkbLidas'
@@ -78,7 +79,7 @@ class Mensagens(object):
             })
 
             # Obtemos as mensagens lidas
-            self.__get_mensagens(soup, mensagens, parametros, url)
+            self.__add_mensagens(soup, mensagens, parametros, url)
         except (AttributeError, IOError, ConnectionError, ProtocolError):
             mensagens.clear()
         return mensagens

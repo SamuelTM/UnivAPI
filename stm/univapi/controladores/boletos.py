@@ -1,14 +1,15 @@
 import json
 
-from br.stm.univapi.auxiliares import paginas
-from br.stm.univapi.auxiliares.paginas import Pagina
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
+from stm.univapi.auxiliares import paginas
+from stm.univapi.auxiliares.controlador import Controlador
+from stm.univapi.auxiliares.paginas import Pagina
 from stm.univapi.modelos.boleto import Boleto
 
 
-class Boletos(object):
+class Boletos(Controlador):
     def __init__(self, aluno):
         self.aluno = aluno
 

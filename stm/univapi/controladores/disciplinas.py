@@ -4,16 +4,17 @@ from threading import Thread
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from stm.univapi import Aps
-from stm.univapi import Disciplina
-from stm.univapi import Falta
-from stm.univapi import Nota
-from stm.univapi import Pagina
-from stm.univapi import Serializador
-from stm.univapi import paginas
+from stm.univapi.auxiliares import paginas
+from stm.univapi.auxiliares.controlador import Controlador
+from stm.univapi.auxiliares.paginas import Pagina
+from stm.univapi.auxiliares.serializador import Serializador
+from stm.univapi.modelos.aps import Aps
+from stm.univapi.modelos.disciplina import Disciplina
+from stm.univapi.modelos.falta import Falta
+from stm.univapi.modelos.nota import Nota
 
 
-class Disciplinas(object):
+class Disciplinas(Controlador):
     def __init__(self, aluno):
         self.aluno = aluno
 
@@ -23,7 +24,7 @@ class Disciplinas(object):
     de carregar neste método. Isso vai poupar tempo mais tarde.
     '''
 
-    def __numero_disciplinas(self, parametros):
+    def __numero_disciplinas(self, parametros) -> int:
         pedido_get = self.aluno.sessao.get(paginas.get_url(Pagina.principal, True))
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
@@ -38,7 +39,7 @@ class Disciplinas(object):
 
         return len(soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True))
 
-    def __obter_aps(self, soup):
+    def __obter_aps(self, soup) -> list:
         links_aps = []
         tabela_aps = soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input')
         for linha_tabela in tabela_aps:
@@ -76,7 +77,7 @@ class Disciplinas(object):
         return aps
 
     @staticmethod
-    def __obter_notas(soup):
+    def __obter_notas(soup) -> list:
         notas = []
         for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
             nota = t.find(id=lambda x: x and '_lbNota' in x)
@@ -94,7 +95,7 @@ class Disciplinas(object):
         return notas
 
     @staticmethod
-    def __obter_faltas(soup):
+    def __obter_faltas(soup) -> list:
         faltas = []
 
         # Adicionamos as faltas de aulas
@@ -162,7 +163,7 @@ class Disciplinas(object):
 
     def __disciplina_thread(self, numero_pagina, params_iniciais, lista_disciplinas, sessao_atual):
         if not sessao_atual:
-            from stm.univapi import Aluno
+            from stm.univapi.aluno import Aluno
             aluno = Aluno(self.aluno.matricula, self.aluno.senha)
             if aluno.autenticar():
                 lista_disciplinas.append(aluno.disciplinas.__disciplina(numero_pagina, params_iniciais))

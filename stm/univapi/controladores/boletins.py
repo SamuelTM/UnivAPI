@@ -1,21 +1,22 @@
 import json
 
-from br.stm.univapi.auxiliares import paginas
-from br.stm.univapi.auxiliares.paginas import Pagina
-from br.stm.univapi.auxiliares.serializador import Serializador
-from br.stm.univapi.modelos.boletim import Boletim
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
+from stm.univapi.auxiliares import paginas
+from stm.univapi.auxiliares.controlador import Controlador
+from stm.univapi.auxiliares.paginas import Pagina
+from stm.univapi.auxiliares.serializador import Serializador
+from stm.univapi.modelos.boletim import Boletim
 from stm.univapi.modelos.nota_final import NotaFinal
 
 
-class Boletins(object):
+class Boletins(Controlador):
     def __init__(self, aluno):
         self.aluno = aluno
 
     @staticmethod
-    def __obter_notas(soup):
+    def __obter_notas(soup: BeautifulSoup) -> list:
         notas = []
         try:
             tabela = soup.find_all(class_=lambda x: x and 'ItemGrid' in x)

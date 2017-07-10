@@ -3,11 +3,12 @@ import json
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from stm.univapi import Pagina
-from stm.univapi import paginas
+from stm.univapi.auxiliares import paginas
+from stm.univapi.auxiliares.controlador import Controlador
+from stm.univapi.auxiliares.paginas import Pagina
 
 
-class Perfil(object):
+class Perfil(Controlador):
     def __init__(self, aluno):
         self.aluno = aluno
 
