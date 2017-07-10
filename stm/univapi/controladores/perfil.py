@@ -3,8 +3,8 @@ import json
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from br.stm.univapi.auxiliares import Paginas
-from br.stm.univapi.auxiliares.Paginas import Pagina
+from stm.univapi import Pagina
+from stm.univapi import paginas
 
 
 class Perfil(object):
@@ -18,7 +18,7 @@ class Perfil(object):
     def lista(self):
         dados = []
         try:
-            pagina_principal = self.aluno.sessao.get(Paginas.get_url(Pagina.principal, True))
+            pagina_principal = self.aluno.sessao.get(paginas.get_url(Pagina.principal, True))
             soup = BeautifulSoup(pagina_principal.content.decode('utf-8'), 'html5lib')
 
             # Nome do aluno

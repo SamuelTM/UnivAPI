@@ -1,13 +1,13 @@
 import json
 
+from br.stm.univapi.auxiliares import paginas
+from br.stm.univapi.auxiliares.paginas import Pagina
+from br.stm.univapi.auxiliares.serializador import Serializador
+from br.stm.univapi.modelos.boletim import Boletim
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from br.stm.univapi.auxiliares import Paginas
-from br.stm.univapi.auxiliares.Paginas import Pagina
-from br.stm.univapi.auxiliares.Serializador import Serializador
-from br.stm.univapi.modelos.Boletim import Boletim
-from br.stm.univapi.modelos.NotaFinal import NotaFinal
+from stm.univapi.modelos.nota_final import NotaFinal
 
 
 class Boletins(object):
@@ -18,7 +18,8 @@ class Boletins(object):
     def __obter_notas(soup):
         notas = []
         try:
-            for linha_tabela in soup.find_all(class_=lambda x: x and 'ItemGrid' in x):
+            tabela = soup.find_all(class_=lambda x: x and 'ItemGrid' in x)
+            for linha_tabela in tabela:
                 info_disciplina = linha_tabela.find_all('span')
 
                 disciplina = info_disciplina[0].text.strip()
@@ -37,7 +38,7 @@ class Boletins(object):
 
     def lista(self):
         boletins = []
-        url = Paginas.get_url(Pagina.boletim, True)
+        url = paginas.get_url(Pagina.boletim, True)
         pagina_boletim = self.aluno.sessao.get(url)
         soup = BeautifulSoup(pagina_boletim.content.decode('utf-8'), 'html5lib')
         anos = [tag.text for tag in soup.find(id=lambda x: x and '_dlistAno' in x).find_all('option') if
