@@ -1,11 +1,11 @@
 import json
 
-from br.stm.univapi.auxiliares import paginas
-from br.stm.univapi.auxiliares.paginas import Pagina
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from stm.univapi.modelos.boleto import Boleto
+from br.stm.univapi.auxiliares import Paginas
+from br.stm.univapi.auxiliares.Paginas import Pagina
+from br.stm.univapi.modelos.Boleto import Boleto
 
 
 class Boletos(object):
@@ -36,7 +36,7 @@ class Boletos(object):
     def lista(self):
         boletos = []
         try:
-            url = paginas.get_url(Pagina.boletos, True)
+            url = Paginas.get_url(Pagina.boletos, True)
             pagina_boleto = self.aluno.sessao.get(url)
             soup = BeautifulSoup(pagina_boleto.content.decode('utf-8'), 'html5lib')
             numero_paginas = len(soup.find('tr', {'class': 'BarrDataControls'}).find('td').find_all('td'))

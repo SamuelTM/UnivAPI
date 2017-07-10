@@ -1,11 +1,11 @@
 import json
 
-from br.stm.univapi.auxiliares import paginas
-from br.stm.univapi.auxiliares.paginas import Pagina
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from stm.univapi.modelos.mensagem import Mensagem
+from br.stm.univapi.auxiliares import Paginas
+from br.stm.univapi.auxiliares.Paginas import Pagina
+from br.stm.univapi.modelos.Mensagem import Mensagem
 
 
 class Mensagens(object):
@@ -48,7 +48,7 @@ class Mensagens(object):
     def lista(self):
         mensagens = []
         try:
-            url = paginas.get_url(Pagina.mensagens, True)
+            url = Paginas.get_url(Pagina.mensagens, True)
             pedido_get = self.aluno.sessao.get(url)
             soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 

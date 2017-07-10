@@ -3,9 +3,9 @@ import json
 from bs4 import BeautifulSoup
 from urllib3.exceptions import ProtocolError
 
-from stm.univapi import Horario
-from stm.univapi import Pagina
-from stm.univapi import paginas
+from br.stm.univapi.auxiliares import Paginas
+from br.stm.univapi.auxiliares.Paginas import Pagina
+from br.stm.univapi.modelos.Horario import Horario
 
 
 class Horarios(object):
@@ -20,7 +20,7 @@ class Horarios(object):
     def lista(self):
         hrs = []
         try:
-            pedido_get = self.aluno.sessao.get(paginas.get_url(Pagina.horarios, True))
+            pedido_get = self.aluno.sessao.get(Paginas.get_url(Pagina.horarios, True))
             soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
             turnos = ['_grdMatutino', '_grdVespertino', '_grdNoturno']
 

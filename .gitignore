@@ -51,4 +51,4 @@ Temporary Items
 *.pyc
 
 # Arquivo para testar o projeto
-stm/univapi/teste.py
+br/stm/univapi/Teste\.py
