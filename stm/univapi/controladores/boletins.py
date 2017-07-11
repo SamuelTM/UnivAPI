@@ -16,7 +16,7 @@ class Boletins(Controlador):
         self.aluno = aluno
 
     @staticmethod
-    def __obter_notas(soup: BeautifulSoup) -> list:
+    def __obter_notas(soup):
         notas = []
         try:
             tabela = soup.find_all(class_=lambda x: x and 'ItemGrid' in x)

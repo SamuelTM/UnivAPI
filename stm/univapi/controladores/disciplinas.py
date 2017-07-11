@@ -24,7 +24,7 @@ class Disciplinas(Controlador):
     de carregar neste método. Isso vai poupar tempo mais tarde.
     '''
 
-    def __numero_disciplinas(self, parametros) -> int:
+    def __numero_disciplinas(self, parametros):
         pedido_get = self.aluno.sessao.get(paginas.get_url(Pagina.principal, True))
         soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
@@ -39,7 +39,7 @@ class Disciplinas(Controlador):
 
         return len(soup.find(id=lambda x: x and '_grdDisciplinasEmCurso' in x).find_all(href=True))
 
-    def __obter_aps(self, soup) -> list:
+    def __obter_aps(self, soup):
         links_aps = []
         tabela_aps = soup.find(id=lambda x: x and '_gdvAPS' in x).find_all('input')
         for linha_tabela in tabela_aps:
@@ -77,7 +77,7 @@ class Disciplinas(Controlador):
         return aps
 
     @staticmethod
-    def __obter_notas(soup) -> list:
+    def __obter_notas(soup):
         notas = []
         for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
             nota = t.find(id=lambda x: x and '_lbNota' in x)
@@ -95,7 +95,7 @@ class Disciplinas(Controlador):
         return notas
 
     @staticmethod
-    def __obter_faltas(soup) -> list:
+    def __obter_faltas(soup):
         faltas = []
 
         # Adicionamos as faltas de aulas

@@ -74,36 +74,48 @@ class Aluno(object):
                 if 'Desconectar' in pedido_post.text:
                     return True
                 else:
-                    # Senão, sabemos que temos que selecionar o curso,
-                    # então chamamos a página de cursos
+                    # Senão, sabemos que temos que selecionar o curso primeiro
+                    soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
                     url_cursos = paginas.get_url(Pagina.cursos, True) + '?M=' + self.matricula
-                    pedido_get = self.sessao.get(url_cursos)
-                    soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
 
                     # Buscamos os cursos disponíveis na tabela
                     cursos = soup.find(id=lambda x: x and 'grdCursos' in x)
+
                     # Se existe algum curso na tabela
                     if cursos:
+
+                        # Procuramos por algum curso, dando preferência ao
+                        # curso que for frequente, caso haja um
+
+                        curso_atual = ['', '']
+
                         for curso in cursos.find_all('tr', {'class': lambda x: x and 'ItemGrid' in x}):
                             situacao = curso.find_all('td')[2].contents[0]
+                            link_curso = curso.find('a')['href'].split('(\'')[1].split('\',')[0]
 
-                            # Buscamos o curso que tem a situação "Frequente"
                             if situacao.startswith('Frequente'):
-                                tag_link = curso.find('a')
-                                link = tag_link['href'].split('(\'')[1].split('\',')[0]
-                                # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
-                                parametros = {
-                                    '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
-                                    '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})[
-                                        'value'],
-                                    '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
-                                    '__VIEWSTATEENCRYPTED': '',
-                                    '__EVENTTARGET': link,
-                                    'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|' + link
-                                }
-                                pedido_post = self.sessao.post(url_cursos, data=parametros)
-                                # Se tudo der certo esta função retorna True
-                                return pedido_post.status_code == 200
+                                curso_atual[0] = 'Frequente'
+                                curso_atual[1] = link_curso
+                                break
+                            else:
+                                if curso_atual[0] != 'Frequente' and curso_atual[0] != 'Indefinido':
+                                    curso_atual[0] = situacao
+                                    curso_atual[1] = link_curso
+
+                        # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
+                        parametros = {
+                            '__VIEWSTATE': soup.find('input', {'name': '__VIEWSTATE'})['value'],
+                            '__VIEWSTATEGENERATOR': soup.find('input', {'name': '__VIEWSTATEGENERATOR'})[
+                                'value'],
+                            '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value'],
+                            '__VIEWSTATEENCRYPTED': '',
+                            '__EVENTTARGET': curso_atual[1],
+                            'ctl00$ScriptManager1': 'ctl00$UpdatePanel1|' + curso_atual[1]
+                        }
+                        pedido_post = self.sessao.post(url_cursos, data=parametros)
+
+                        # Se tudo der certo esta função retorna True
+                        return pedido_post.status_code == 200
         return False
 
     '''

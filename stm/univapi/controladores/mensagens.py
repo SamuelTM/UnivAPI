@@ -18,7 +18,7 @@ class Mensagens(Controlador):
     adicionando a mensagem à lista especificada
     '''
 
-    def __add_mensagens(self, soup, lista, parametros, url):
+    def __adicionar_mensagens(self, soup, lista, parametros, url):
         for msg in soup.find(id=lambda x: x and '_gvMensagem' in x).find_all(
                 'tr', {'class': lambda x: x and 'ItemGrid' in x}):
             # Nome do remetente
@@ -63,7 +63,7 @@ class Mensagens(Controlador):
             }
 
             # Obtemos as mensagens novas
-            self.__add_mensagens(soup, mensagens, parametros, url)
+            self.__adicionar_mensagens(soup, mensagens, parametros, url)
 
             # Mandamos um pedido para abrir a página de mensagens lidas
             parametros['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$lkbLidas'
@@ -79,7 +79,7 @@ class Mensagens(Controlador):
             })
 
             # Obtemos as mensagens lidas
-            self.__add_mensagens(soup, mensagens, parametros, url)
+            self.__adicionar_mensagens(soup, mensagens, parametros, url)
         except (AttributeError, IOError, ConnectionError, ProtocolError):
             mensagens.clear()
         return mensagens
