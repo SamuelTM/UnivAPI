@@ -1,0 +1,1 @@
+web: gunicorn stm/univapi/principal:app

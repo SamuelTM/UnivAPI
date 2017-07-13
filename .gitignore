@@ -52,3 +52,6 @@ Temporary Items
 
 # Arquivo para testar o projeto
 stm/univapi/teste.py
+
+# Diretório do ambiente virtual
+venv
