@@ -55,72 +55,81 @@ class Disciplinas(Controlador):
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
         }
         aps = []
-        for link_pagina in links_aps:
-            # Adicionamos o parâmetro necessário para abrir a página da APS
-            parametros_aps[link_pagina] = 'Visualizar'
+        try:
+            for link_pagina in links_aps:
+                # Adicionamos o parâmetro necessário para abrir a página da APS
+                parametros_aps[link_pagina] = 'Visualizar'
 
-            pedido_post = self.aluno.sessao.post(paginas.get_url(Pagina.disciplina, True), data=parametros_aps)
-            soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
-            tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
+                pedido_post = self.aluno.sessao.post(paginas.get_url(Pagina.disciplina, True), data=parametros_aps)
+                soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+                tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
 
-            # Verificação para o caso da disciplina não possuir APS registrada
-            if tag_titulo:
-                titulo = tag_titulo.contents[0]
-                lancamento = soup.find(id=lambda x: x and '_lblLancamentoAPS' in x).contents[0]
-                prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
-                descricao = ' '.join(
-                    soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
+                # Verificação para o caso da disciplina não possuir APS registrada
+                if tag_titulo:
+                    titulo = tag_titulo.contents[0]
+                    lancamento = soup.find(id=lambda x: x and '_lblLancamentoAPS' in x).contents[0]
+                    prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
+                    descricao = ' '.join(
+                        soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
 
-                # Adicionamos a APS à lista
+                    # Adicionamos a APS à lista
 
-                aps.append(Aps(lancamento, titulo, prazo, descricao))
+                    aps.append(Aps(lancamento, titulo, prazo, descricao))
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            aps.clear()
         return aps
 
     @staticmethod
     def __obter_notas(soup):
         notas = []
-        for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
-            nota = t.find(id=lambda x: x and '_lbNota' in x)
+        try:
+            for t in soup.find_all('table', border='0', cellpadding='2', cellspacing='0'):
+                nota = t.find(id=lambda x: x and '_lbNota' in x)
 
-            # Verificamos se lbNota existe. Isso serve para
-            # diferenciar uma coluna de nota da coluna do total
-            # das notas
-            if nota:
-                descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
-                data = t.find(id=lambda x: x and '_lbData' in x).contents[0]
-                valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
-                nota = nota.contents[0].replace(',', '.')
+                # Verificamos se lbNota existe. Isso serve para
+                # diferenciar uma coluna de nota da coluna do total
+                # das notas
+                if nota:
+                    descricao = t.find(id=lambda x: x and '_lbTitulo' in x).contents[0]
+                    data = t.find(id=lambda x: x and '_lbData' in x).contents[0]
+                    valor = t.find(id=lambda x: x and '_lbValor' in x).contents[0].replace(',', '.')
+                    nota = nota.contents[0].replace(',', '.')
 
-                notas.append(Nota(descricao, data, valor, nota))
+                    notas.append(Nota(descricao, data, valor, nota))
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            notas.clear()
         return notas
 
     @staticmethod
     def __obter_faltas(soup):
         faltas = []
 
-        # Adicionamos as faltas de aulas
-        tag_faltas = soup.find(id=lambda x: x and '_dlistPresenca' in x)
-        if tag_faltas:
-            for t in tag_faltas.find_all(
-                    'td', style='width:10px;'):
-                faltas_horarios = []
-                for a in t.find_all(id=lambda x: x and '_pnlPresenca' in x):
-                    faltas_horarios.append(0 if 'green' in a.find('img')['src'] else 1)
-                dia = t.find(id=lambda x: x and '_lbDtAula' in x).contents[0]
+        try:
+            # Adicionamos as faltas de aulas
+            tag_faltas = soup.find(id=lambda x: x and '_dlistPresenca' in x)
+            if tag_faltas:
+                for t in tag_faltas.find_all(
+                        'td', style='width:10px;'):
+                    faltas_horarios = []
+                    for a in t.find_all(id=lambda x: x and '_pnlPresenca' in x):
+                        faltas_horarios.append(0 if 'green' in a.find('img')['src'] else 1)
+                    dia = t.find(id=lambda x: x and '_lbDtAula' in x).contents[0]
 
-                faltas.append(Falta('Aulas', dia, faltas_horarios))
+                    faltas.append(Falta('Aulas', dia, faltas_horarios))
 
-        # Adicionamos as faltas de APS
-        tag_faltas_aps = soup.find(id=lambda x: x and '_dlistPresencaAPS' in x)
-        if tag_faltas_aps:
-            for t in tag_faltas_aps.find_all(
-                    'td', style='width:10px;'):
-                faltas_horarios = []
-                for a in t.find_all('img', id=lambda x: x and 'dlistHorariosAPS' in x):
-                    faltas_horarios.append(0 if 'green' in a['src'] else 1)
-                    dia = t.find(id=lambda x: x and 'lbDtAula' in x).contents[0]
+            # Adicionamos as faltas de APS
+            tag_faltas_aps = soup.find(id=lambda x: x and '_dlistPresencaAPS' in x)
+            if tag_faltas_aps:
+                for t in tag_faltas_aps.find_all(
+                        'td', style='width:10px;'):
+                    faltas_horarios = []
+                    for a in t.find_all('img', id=lambda x: x and 'dlistHorariosAPS' in x):
+                        faltas_horarios.append(0 if 'green' in a['src'] else 1)
+                        dia = t.find(id=lambda x: x and 'lbDtAula' in x).contents[0]
 
-                    faltas.append(Falta('APS', dia, faltas_horarios))
+                        faltas.append(Falta('APS', dia, faltas_horarios))
+        except (AttributeError, IOError, ConnectionError, ProtocolError):
+            faltas.clear()
         return faltas
 
     '''
@@ -137,21 +146,25 @@ class Disciplinas(Controlador):
             pedido_post = self.aluno.sessao.post(paginas.get_url(Pagina.principal, True), data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
 
-            # Obtemos as informações básicas da disciplina
-            nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
-            professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
-            situacao = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents[0].strip()
+            situacao_tag = soup.find(id=lambda x: x and '_lbSituacaoDisciplina' in x).contents
 
-            # Obtemos as APS
-            aps = self.__obter_aps(soup)
+            # Verifica se a página da disciplina não está em branco
+            if situacao_tag:
+                # Obtemos as informações básicas da disciplina
+                nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
+                professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
+                situacao = situacao_tag[0].strip()
 
-            # Obtemos as notas
-            notas = self.__obter_notas(soup)
+                # Obtemos as APS
+                aps = self.__obter_aps(soup)
 
-            # Obtemos as faltas
-            faltas = self.__obter_faltas(soup)
+                # Obtemos as notas
+                notas = self.__obter_notas(soup)
 
-            return Disciplina(nome, professor, situacao, notas, faltas, aps)
+                # Obtemos as faltas
+                faltas = self.__obter_faltas(soup)
+
+                return Disciplina(nome, professor, situacao, notas, faltas, aps)
         except (AttributeError, IOError, ConnectionError, ProtocolError):
             return None
 
@@ -166,9 +179,13 @@ class Disciplinas(Controlador):
             from stm.univapi.aluno import Aluno
             aluno = Aluno(self.aluno.matricula, self.aluno.senha)
             if aluno.autenticar():
-                lista_disciplinas.append(aluno.disciplinas.__disciplina(numero_pagina, params_iniciais))
+                disciplina = aluno.disciplinas.__disciplina(numero_pagina, params_iniciais)
+                if disciplina:
+                    lista_disciplinas.append(disciplina)
         else:
-            lista_disciplinas.append(self.__disciplina(numero_pagina, params_iniciais))
+            disciplina = self.__disciplina(numero_pagina, params_iniciais)
+            if disciplina:
+                lista_disciplinas.append(disciplina)
 
     '''
     Retorna uma lista de objetos Disciplina
@@ -179,7 +196,6 @@ class Disciplinas(Controlador):
         disciplinas = []
         parametros = {}
         n_disciplinas = self.__numero_disciplinas(parametros)
-
         if n_disciplinas > 0:
             threads = []
 

@@ -85,7 +85,9 @@ class Aluno(object):
                     if cursos:
 
                         # Procuramos por algum curso, dando preferência ao
-                        # curso que for frequente, caso haja um
+                        # curso que for frequente. Caso não haja um curso frequente,
+                        # procuramos por um indefinido, se este também não existir,
+                        # escolhemos qualquer um
 
                         curso_atual = ['', '']
 
@@ -93,14 +95,11 @@ class Aluno(object):
                             situacao = curso.find_all('td')[2].contents[0]
                             link_curso = curso.find('a')['href'].split('(\'')[1].split('\',')[0]
 
-                            if situacao.startswith('Frequente'):
-                                curso_atual[0] = 'Frequente'
-                                curso_atual[1] = link_curso
+                            if curso_atual[0] == 'Frequente':
                                 break
-                            else:
-                                if curso_atual[0] != 'Frequente' and curso_atual[0] != 'Indefinido':
-                                    curso_atual[0] = situacao
-                                    curso_atual[1] = link_curso
+                            elif curso_atual[0] != 'Indefinido' or situacao == 'Frequente':
+                                curso_atual[0] = situacao
+                                curso_atual[1] = link_curso
 
                         # Mandamos o pedido para sermos redirecionados à página principal do curso selecionado
                         parametros = {
@@ -115,7 +114,7 @@ class Aluno(object):
                         pedido_post = self.sessao.post(url_cursos, data=parametros)
 
                         # Se tudo der certo esta função retorna True
-                        return pedido_post.status_code == 200
+                        return 'Desconectar' in pedido_post.text
         return False
 
     '''

@@ -23,6 +23,7 @@ class Horarios(Controlador):
         try:
             pedido_get = self.aluno.sessao.get(paginas.get_url(Pagina.horarios, True))
             soup = BeautifulSoup(pedido_get.content.decode('utf-8'), 'html5lib')
+
             turnos = ['_grdMatutino', '_grdVespertino', '_grdNoturno']
 
             # Procuramos pelos horários de todos os turnos
@@ -43,9 +44,17 @@ class Horarios(Controlador):
                             # Pegamos cada célula da tabela
                             celulas = tabela.find_all('table', id=lambda x: x and '_grdProfs' in x)
                             for celula in celulas:
+
+                                professor = ''
                                 professor_tag = celula.find('a', style='text-decoration:none')
-                                professor = professor_tag.contents[0] if professor_tag else \
-                                    celula.find(id=lambda x: x and 'lbProf' in x).contents[0]
+
+                                if professor_tag and professor_tag.contents:
+                                    professor = professor_tag.contents[0]
+                                else:
+                                    alt_prof = celula.find(id=lambda x: x and 'lbProf' in x)
+                                    if alt_prof and alt_prof.contents:
+                                        professor = alt_prof.contents[0]
+
                                 disciplina = celula.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
                                 sala = celula.find(id=lambda x: x and '_lbSala' in x).contents[0]
                                 dia = celula.get('id').split('grdProfs')[1]
