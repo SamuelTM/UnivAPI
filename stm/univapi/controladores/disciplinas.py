@@ -55,6 +55,7 @@ class Disciplinas(Controlador):
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
         }
         aps = []
+        
         try:
             for link_pagina in links_aps:
 
