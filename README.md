@@ -29,6 +29,6 @@ print(pedido.text)
 ```
 
 Isso imprimiria:
-`
+```javascript
 {"nome": "Nome do Aluno", "email": "email@exemplo.com", "curso": "Curso do Aluno"}
-`
+```
