@@ -7,4 +7,6 @@ Com esta API, é possível autenticar-se e obter diversos tipos de informações
 
 Utiliza-se uma técnica conhecida como "web scraping", que consiste em extrair as informações desejadas de uma página através de seu código-fonte, filtrando as partes desnecessárias.
 
+A API está hospedada e pronta para uso em https://univapi.herokuapp.com/
+
 Este projeto está licensiado sob o MIT License.
