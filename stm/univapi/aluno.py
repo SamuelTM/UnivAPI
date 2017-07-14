@@ -18,6 +18,7 @@ class Aluno(object):
         self.matricula = matricula
         self.senha = senha
         self.sessao = requests.Session()
+
         # Alteramos os cabeçalhos dos nossos pedidos para não sermos confundidos com robôs
         self.sessao.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0',

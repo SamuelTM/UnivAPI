@@ -23,10 +23,12 @@ class Mensagens(Controlador):
                 'tr', {'class': lambda x: x and 'ItemGrid' in x}):
             # Nome do remetente
             remetente = msg.find('a', id=lambda x: x and '_lkbDe' in x).contents[0]
+
             # Data de recebimento
             data = msg.find('a', id=lambda x: x and '_lkbData' in x).contents[0]
 
             tag_assunto = msg.find('a', id=lambda x: x and '_lkbAssunto' in x)
+
             # Assunto da mensagem
             assunto = ' '.join(tag_assunto.contents[0].split())
 
@@ -36,6 +38,7 @@ class Mensagens(Controlador):
             # Abrimos a página da mensagem para ver seu conteúdo
             pedido_post = self.aluno.sessao.post(url, data=parametros)
             soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+
             # Conteúdo da mensagem
             conteudo = ' '.join(soup.find('div', id='Corpo').contents[4].replace('\n', ' ').split())
 

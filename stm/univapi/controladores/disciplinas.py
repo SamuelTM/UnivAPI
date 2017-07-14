@@ -57,6 +57,7 @@ class Disciplinas(Controlador):
         aps = []
         try:
             for link_pagina in links_aps:
+
                 # Adicionamos o parâmetro necessário para abrir a página da APS
                 parametros_aps[link_pagina] = 'Visualizar'
 
@@ -73,7 +74,6 @@ class Disciplinas(Controlador):
                         soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
 
                     # Adicionamos a APS à lista
-
                     aps.append(Aps(lancamento, titulo, prazo, descricao))
         except (AttributeError, IOError, ConnectionError, ProtocolError):
             aps.clear()
