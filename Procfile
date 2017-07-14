@@ -1,1 +1,1 @@
-web: gunicorn principal:app
+web: gunicorn stm.univapi.principal:app
