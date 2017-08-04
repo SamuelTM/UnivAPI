@@ -153,7 +153,13 @@ class Disciplinas(Controlador):
             if situacao_tag:
                 # Obtemos as informações básicas da disciplina
                 nome = soup.find(id=lambda x: x and '_lbDisciplina' in x).contents[0]
-                professor = soup.find(id=lambda x: x and '_lbProfessores' in x).contents[0]
+
+                professor = ''
+                professor_tag = soup.find(id=lambda x: x and '_lbProfessores' in x)
+
+                if professor_tag and professor_tag.contents:
+                    professor = professor_tag.contents[0]
+
                 situacao = situacao_tag[0].strip()
 
                 # Obtemos as APS
