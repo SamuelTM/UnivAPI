@@ -21,7 +21,7 @@ class Aluno(object):
 
         # Alteramos os cabeçalhos dos nossos pedidos para não sermos confundidos com robôs
         self.sessao.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0',
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Encoding': 'gzip, deflate',
             'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3'
@@ -59,14 +59,7 @@ class Aluno(object):
             }
 
             # Mandamos um pedido POST com os parâmetros para a página de login
-
-            # Por alguma razão, os parâmetros só são enviados
-            # corretamente em sistemas Windows se são passados
-            # como "data" ao invés de "params"
-
-            windows = 'Windows' in platform.system()
-            pedido_post = self.sessao.post(url_login, data=parametros) if windows else self.sessao.post(
-                url_login, params=parametros)
+            pedido_post = self.sessao.post(url_login, params=parametros)
 
             # Se conseguimos autenticar com sucesso
             if pedido_post.status_code == 200 and 'novamente' not in pedido_post.text:
