@@ -55,27 +55,28 @@ class Disciplinas(Controlador):
             '__EVENTVALIDATION': soup.find('input', {'name': '__EVENTVALIDATION'})['value']
         }
         aps = []
-        
+
         try:
             for link_pagina in links_aps:
-
                 # Adicionamos o parâmetro necessário para abrir a página da APS
                 parametros_aps[link_pagina] = 'Visualizar'
 
                 pedido_post = self.aluno.sessao.post(paginas.get_url(Pagina.disciplina, True), data=parametros_aps)
-                soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
-                tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
+                if pedido_post.status_code == 200:
+                    soup = BeautifulSoup(pedido_post.content.decode('utf-8'), 'html5lib')
+                    tag_titulo = soup.find(id=lambda x: x and '_lblTituloAPS' in x)
 
-                # Verificação para o caso da disciplina não possuir APS registrada
-                if tag_titulo:
-                    titulo = tag_titulo.contents[0]
-                    lancamento = soup.find(id=lambda x: x and '_lblLancamentoAPS' in x).contents[0]
-                    prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
-                    descricao = ' '.join(
-                        soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
+                    # Verificação para o caso da disciplina não possuir APS registrada
+                    if tag_titulo:
+                        titulo = tag_titulo.contents[0]
+                        lancamento = soup.find(id=lambda x: x and '_lblLancamentoAPS' in x).contents[0]
+                        prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
+                        descricao = ' '.join(
+                            soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
 
-                    # Adicionamos a APS à lista
-                    aps.append(Aps(lancamento, titulo, prazo, descricao))
+                        # Adicionamos a APS à lista
+                        if not any(a.titulo for a in aps):
+                            aps.append(Aps(lancamento, titulo, prazo, descricao))
         except (AttributeError, IOError, ConnectionError, ProtocolError):
             aps.clear()
         return aps
@@ -218,6 +219,17 @@ class Disciplinas(Controlador):
                 thread.join()
 
         return disciplinas
+
+    '''
+    Retorna a disciplina pelo número especificado. Esse número é a ordem
+    em que a disciplina se encontra na lista de disciplinas do Portal do
+    Aluno. Essa ordem começa do 2 e vai até o número de disciplinas - 1.
+    '''
+    def disciplina(self, numero):
+        parametros = {}
+        n_disciplinas = self.__numero_disciplinas(parametros)
+        if 2 <= numero <= n_disciplinas + 1:
+            return self.__disciplina(numero, parametros)
 
     '''
     Retorna todas as disciplinas em formato JSON
