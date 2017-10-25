@@ -23,7 +23,7 @@ class Aps(object):
 
     '''
     Retorna o tempo restante para entrega
-    da APS em formato hh:mm:ss
+    da APS em dias, horas e minutos
     '''
 
     def tempo_restante(self):
@@ -31,6 +31,7 @@ class Aps(object):
         if segundos > 0:
             m, s = divmod(segundos, 60)
             h, m = divmod(m, 60)
-            return '%d:%02d:%02d' % (h, m, s)
+            d, h = divmod(h, 24)
+            return '{:g}d, {:02g}h, {:02g}m'.format(d, h, m)
         else:
             return '0'

@@ -74,9 +74,15 @@ class Disciplinas(Controlador):
                         descricao = ' '.join(
                             soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
 
-                        # Adicionamos a APS à lista
-                        if not any(a.titulo for a in aps):
-                            aps.append(Aps(lancamento, titulo, prazo, descricao))
+                        nova_aps = Aps(lancamento, titulo, prazo, descricao)
+                        # Verificamos por lançamentos duplicados, alguns professores costumam lançar a mesma APS
+                        # mais de uma vez acidentalmente
+                        if not any(a.titulo == nova_aps.titulo and a.descricao == nova_aps.descricao for a in aps):
+                            # Adicionamos a APS à lista
+                            aps.append(nova_aps)
+
+                # Removemos o parâmetro da página após obter a APS
+                del parametros_aps[link_pagina]
         except (AttributeError, IOError, ConnectionError, ProtocolError):
             aps.clear()
         return aps
@@ -225,6 +231,7 @@ class Disciplinas(Controlador):
     em que a disciplina se encontra na lista de disciplinas do Portal do
     Aluno. Essa ordem começa do 2 e vai até o número de disciplinas - 1.
     '''
+
     def disciplina(self, numero):
         parametros = {}
         n_disciplinas = self.__numero_disciplinas(parametros)
