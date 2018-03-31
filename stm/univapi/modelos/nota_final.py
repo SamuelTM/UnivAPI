@@ -1,4 +1,4 @@
-class NotaFinal(object):
+class NotaFinal:
     def __init__(self, disciplina, turma, ta, es, total, faltas_teoricas, faltas_praticas, situacao):
         self.disciplina = disciplina
         self.turma = turma

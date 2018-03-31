@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 
-class Mensagem(object):
+class Mensagem:
     def __init__(self, remetente, data, assunto, mensagem):
         self.remetente = remetente
         self.data = data

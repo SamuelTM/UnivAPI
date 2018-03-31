@@ -1,4 +1,4 @@
-class Boleto(object):
+class Boleto:
     def __init__(self, ano_mes, vencimento, mensalidade, dependencia, desconto, liquido, situacao):
         self.ano_mes = ano_mes
         self.vencimento = vencimento

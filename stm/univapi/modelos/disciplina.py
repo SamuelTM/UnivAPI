@@ -1,4 +1,4 @@
-class Disciplina(object):
+class Disciplina:
     def __init__(self, nome, professor, situacao, notas, faltas, aps):
         self.nome = nome
         self.professor = professor

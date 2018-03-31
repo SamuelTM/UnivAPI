@@ -2,12 +2,13 @@ import time
 from datetime import datetime
 
 
-class Aps(object):
-    def __init__(self, data_lancamento, titulo, prazo_entrega, descricao):
+class Aps:
+    def __init__(self, data_lancamento, titulo, prazo_entrega, descricao, postado):
         self.data_lancamento = data_lancamento
         self.titulo = titulo
         self.prazo_entrega = prazo_entrega
         self.descricao = descricao
+        self.postado = postado
 
     '''
     Retorna o prazo para entrega no formato de data

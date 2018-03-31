@@ -73,8 +73,9 @@ class Disciplinas(Controlador):
                         prazo = soup.find(id=lambda x: x and '_lblDataRespostaAPS' in x).contents[0]
                         descricao = ' '.join(
                             soup.find('div', attrs={'style': 'float: left; max-width: 90%;'}).contents[0].split())
+                        postado = True if soup.find(text=lambda x: x and 'Arquivo de Resposta' in x).parent() else False
 
-                        nova_aps = Aps(lancamento, titulo, prazo, descricao)
+                        nova_aps = Aps(lancamento, titulo, prazo, descricao, postado)
                         # Verificamos por lançamentos duplicados, alguns professores costumam lançar a mesma APS
                         # mais de uma vez acidentalmente
                         if not any(a.titulo == nova_aps.titulo and a.descricao == nova_aps.descricao for a in aps):

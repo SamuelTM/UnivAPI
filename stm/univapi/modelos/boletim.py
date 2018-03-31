@@ -1,4 +1,4 @@
-class Boletim(object):
+class Boletim:
     def __init__(self, ano, semestre, notas):
         self.ano = ano
         self.semestre = semestre

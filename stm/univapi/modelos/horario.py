@@ -1,4 +1,4 @@
-class Horario(object):
+class Horario:
     def __init__(self, hora_inicio, hora_termino, professor, disciplina, sala, dia, turno):
         self.hora_inicio = hora_inicio
         self.hora_termino = hora_termino
