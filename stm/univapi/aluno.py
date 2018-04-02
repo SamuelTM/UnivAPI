@@ -11,7 +11,7 @@ from stm.univapi.controladores.mensagens import Mensagens
 from stm.univapi.controladores.perfil import Perfil
 
 
-class Aluno(object):
+class Aluno:
     def __init__(self, matricula, senha):
         self.matricula = matricula
         self.senha = senha
