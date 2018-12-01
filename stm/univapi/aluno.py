@@ -108,38 +108,3 @@ class Aluno:
                         # Se tudo der certo esta função retorna True
                         return 'Desconectar' in pedido_post.text
         return False
-
-    '''
-    Retorna o coeficiente de desempenho acadêmico
-    do aluno. O valor está compreendido entre 0 e 1,
-    quanto maior o valor, melhor o desempenho.
-    '''
-
-    @staticmethod
-    def desempenho(lst_disciplinas):
-        total_ganho = 0
-        total_distribuido = 0
-        for disciplina in lst_disciplinas:
-            ganho = disciplina.pontos_ganhos()
-            distribuidos = disciplina.pontos_distribuidos()
-            min_necessario = distribuidos * 0.7
-
-            margem = ganho - min_necessario
-            if margem > 0:
-                ganho += ganho * (margem / 100) * 3
-            elif margem < 0:
-                if margem >= -31:
-                    ganho += (ganho * (margem / 100))
-                else :
-                    ganho += ganho * (margem / 100) * 2
-
-            total_ganho += ganho
-            total_distribuido += distribuidos
-
-        maxi = (len(lst_disciplinas)*190)/100
-        mini = 0 
-        val = (total_ganho / total_distribuido if total_distribuido > 0 else 1)
-
-        retorno = val-mini/maxi-mini       
-
-        return retorno
