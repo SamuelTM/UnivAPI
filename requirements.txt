@@ -8,7 +8,7 @@ gunicorn==19.9.0
 html5lib==1.0.1
 idna==2.7
 itsdangerous==1.1.0
-Jinja2==2.10
+Jinja2>=2.10.1
 MarkupSafe==1.1.0
 requests==2.20.1
 six==1.11.0
